@@ -1,4 +1,6 @@
-# The pieces' shapes, ordered by their value plus one on the `PieceType` enum and rotation
+# The pieces' shapes, ordered by their value plus one on the `PieceType`
+# enum and by rotation
+#
 # Each shape is stored as a list of the coordinate offsets for each mino
 #
 # i.e.: SHAPES[<type: PieceType>][<rotation: int>] -> [(y, x), ...]

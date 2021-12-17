@@ -3,24 +3,24 @@ import math
 import random
 import secrets
 from typing import NamedTuple, Optional, Union
-from typing_extensions import TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
+from typing_extensions import TypeAlias
 
 from .consts import SHAPES
 from .consts import SRS_I_KICKS
 from .consts import SRS_KICKS
 
 Seed: TypeAlias = Union[str, bytes, int]
-QueueSeq: TypeAlias = list['PieceType']
+QueueSeq: TypeAlias = list["PieceType"]
 
-PieceType = enum.IntEnum('PieceType', 'I L J S Z T O')
-Position = NamedTuple('Position', [('x', int), ('y', int)])
+PieceType = enum.IntEnum("PieceType", "I L J S Z T O")
+Position = NamedTuple("Position", [("x", int), ("y", int)])
 
 
 class Piece:
-    __slots__ = ('board', 'type', 'pos', 'r')
+    __slots__ = ("board", "type", "pos", "r")
 
     def __init__(
         self,
@@ -28,7 +28,7 @@ class Piece:
         type: PieceType,
         x: Optional[int] = None,
         y: Optional[int] = None,
-        pos: Optional[int] = None,
+        pos: Optional[Position] = None,
         r: int = 0,
     ):
         self.board = board
@@ -65,13 +65,13 @@ class Piece:
     def shape(self) -> NDArray[np.int8]:
         return np.array(SHAPES[self.type - 1][self.r], dtype=np.int8)
 
-    def copy(self, **kwargs) -> 'Piece':
+    def copy(self, **kwargs) -> "Piece":
         return Piece(
             board=self.board,
             type=self.type,
-            x=kwargs.get('x', self.x),
-            y=kwargs.get('y', self.y),
-            r=kwargs.get('r', self.r),
+            x=kwargs.get("x", self.x),
+            y=kwargs.get("y", self.y),
+            r=kwargs.get("r", self.r),
         )
 
     def overlaps(self) -> bool:
@@ -87,11 +87,11 @@ class Piece:
 
 
 class Queue:
-    __slots__ = ('_random', '_queue', '_bag')
+    __slots__ = ("_random", "_queue", "_bag")
 
     def __init__(self, /, queue: list[int], bag: list[int], seed: Seed):
-        assert len(queue) == 4 or len(queue) == 0, 'invalid queue'
-        assert len(bag) == len(set(bag)) < len(PieceType), 'invalid bag'
+        assert len(queue) == 4 or len(queue) == 0, "invalid queue"
+        assert len(bag) == len(set(bag)) < len(PieceType), "invalid bag"
 
         self._random = random.Random(seed)
         self._queue = [PieceType(i) for i in queue]
@@ -125,17 +125,17 @@ class Queue:
         yield from self.pieces
 
     def __repr__(self):
-        return f'Queue(queue={self.pieces}, bag={self.bag})'
+        return f"Queue(queue={self.pieces}, bag={self.bag})"
 
 
 class BaseGame:
     def __init__(self, **kwargs):
-        self.seed = kwargs.get('seed') or secrets.token_bytes()
+        self.seed = kwargs.get("seed") or secrets.token_bytes()
         self.queue = Queue(
-            queue=kwargs.get('queue') or [], bag=kwargs.get('bag') or [], seed=self.seed
+            queue=kwargs.get("queue") or [], bag=kwargs.get("bag") or [], seed=self.seed
         )
         self.board = np.zeros((40, 10), dtype=np.int8)
-        self.piece = Piece(self.board, kwargs.get('piece') or self.queue.pop())
+        self.piece = Piece(self.board, kwargs.get("piece") or self.queue.pop())
         self.hold: int | None = None
         self.hold_lock = False
 
@@ -169,7 +169,7 @@ class BaseGame:
 
         self.hold_lock = False
 
-    def render(self, tiles: list[str] = list(' ILJSZTOX@'), lines: int = 20) -> str:
+    def render(self, tiles: list[str] = list(" ILJSZTOX@"), lines: int = 20) -> str:
         board = self.board.copy()
         ghost = self.piece.copy()
 
@@ -184,7 +184,7 @@ class BaseGame:
         for x, y in self.piece.shape + self.piece.pos:
             board[x, y] = self.piece.type
 
-        return '\n'.join(''.join(tiles[j] for j in i) for i in board[-lines:])
+        return "\n".join("".join(tiles[j] for j in i) for i in board[-lines:])
 
     def swap(self):
         if self.hold_lock:

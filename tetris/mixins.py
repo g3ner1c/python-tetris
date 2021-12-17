@@ -15,7 +15,7 @@ class DeltaFrame:
             # HACK: yeah, this is a frozen object, shouldn't matter within here though
             #       equiv: `self.p_piece = Piece(board=self.c_piece.board, type=1)`
             object.__setattr__(
-                self, 'p_piece', Piece(board=self.c_piece.board, type=1)  # type: ignore
+                self, "p_piece", Piece(board=self.c_piece.board, type=1)  # type: ignore
             )
 
     @property
@@ -57,7 +57,7 @@ class Frameable(GameMixin):
 
 
 class StandardScore(Frameable):
-    '''Mixin implementing scoring based on the latest games.
+    """Mixin implementing scoring based on the latest games.
 
     Conditions applied:  (where level == score_multiplier)
 
@@ -85,7 +85,7 @@ class StandardScore(Frameable):
     | Back-to-Back Perfect-clear | 3200 * level       | -             |
 
     Main source: <https://tetris.wiki/Scoring>
-    '''
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -142,7 +142,7 @@ class StandardScore(Frameable):
         else:
             self.combo = 0
 
-        # There are all blank lines, but also account for those that will be cleared later
+        # true if they're all blank lines, accounting for lines that would be cleared
         perfect_clear = not any((not row.all()) and row.any() for row in board)
 
         # Now actually calculate the score
