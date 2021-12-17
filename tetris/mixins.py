@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from engine import BaseGame
-from engine import Piece
-from engine import PieceType
+from . import BaseGame
+from . import Piece
+from . import PieceType
 
 
 @dataclass(frozen=True)

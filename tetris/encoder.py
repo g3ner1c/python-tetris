@@ -5,7 +5,7 @@ from typing import NamedTuple
 import numpy as np
 from numpy.typing import NDArray
 
-from engine import Piece
+from . import Piece
 
 
 class EncoderFlag(enum.IntFlag):

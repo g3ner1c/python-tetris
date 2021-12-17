@@ -2,16 +2,17 @@ import enum
 import math
 import random
 import secrets
-from typing import NamedTuple, TypeAlias
+from typing import NamedTuple, Optional, Union
+from typing_extensions import TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
 
-from engine.consts import SHAPES
-from engine.consts import SRS_I_KICKS
-from engine.consts import SRS_KICKS
+from .consts import SHAPES
+from .consts import SRS_I_KICKS
+from .consts import SRS_KICKS
 
-Seed: TypeAlias = str | bytes | int
+Seed: TypeAlias = Union[str, bytes, int]
 QueueSeq: TypeAlias = list['PieceType']
 
 PieceType = enum.IntEnum('PieceType', 'I L J S Z T O')
@@ -25,9 +26,9 @@ class Piece:
         self,
         board: NDArray[np.int8],
         type: PieceType,
-        x: int | None = None,
-        y: int | None = None,
-        pos: int | None = None,
+        x: Optional[int] = None,
+        y: Optional[int] = None,
+        pos: Optional[int] = None,
         r: int = 0,
     ):
         self.board = board
