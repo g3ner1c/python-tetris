@@ -1,0 +1,5 @@
+__pycache__
+.python_version
+
+.vscode/
+.idea/
