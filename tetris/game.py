@@ -81,6 +81,7 @@ class BaseGame:
         self.piece.type = self.queue.pop()
         self.piece.x = 18
         self.piece.y = 3
+        self.piece.r = 0
 
         if _overlaps(self.engine, self.piece, self.board):
             self.reset()
@@ -117,6 +118,7 @@ class BaseGame:
             self.hold, self.piece.type = self.piece.type, self.hold
             self.piece.x = 18
             self.piece.y = 3
+            self.piece.r = 0
 
         self.hold_lock = True
 
