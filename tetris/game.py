@@ -30,11 +30,16 @@ def _shape(engine: Engine, piece: Piece) -> Minos:
 
 def _overlaps(engine: Engine, piece: Piece, board: Board) -> bool:
     for x, y in _shape(engine, piece):
-        try:
-            if board[x + piece.x, y + piece.y] != 0:
-                return True
+        x += piece.x
+        y += piece.y
 
-        except IndexError:
+        if x not in range(board.shape[0]):
+            return True
+
+        if y not in range(board.shape[1]):
+            return True
+
+        if board[x, y] != 0:
             return True
 
     return False
