@@ -63,13 +63,13 @@ class BaseGame:
         for x, y in _shape(self.engine, piece):
             self.board[x + piece.x, y + piece.y] = piece.type
 
-        for row, clear in enumerate(self.board.all(1)):
-            if clear:
-                self.board[row] = 0
+        for i, row in enumerate(self.board):
+            if all(row):
                 self.board = np.concatenate(
                     (
-                        np.roll(self.board[: row + 1], shift=1, axis=0),
-                        self.board[row + 1 :],
+                        np.zeros((1, self.board.shape[1]), dtype=np.int8),
+                        self.board[:i],
+                        self.board[i + 1 :],
                     )
                 )
 
@@ -111,15 +111,14 @@ class BaseGame:
             return
 
         if self.hold is None:
-            self.hold = self.piece.type
-            self.piece.type = self.queue.pop()
+            self.hold, self.piece.type = self.piece.type, self.queue.pop()
 
         else:
             self.hold, self.piece.type = self.piece.type, self.hold
-            self.piece.x = 18
-            self.piece.y = 3
-            self.piece.r = 0
 
+        self.piece.x = 18
+        self.piece.y = 3
+        self.piece.r = 0
         self.hold_lock = True
 
     def drag(self, x: int = 0, y: int = 0):
