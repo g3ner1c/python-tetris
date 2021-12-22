@@ -2,6 +2,7 @@ import abc
 import dataclasses
 import random
 
+from .types import KickTable
 from .types import Minos
 from .types import PieceType
 from .types import QueueSeq
@@ -72,11 +73,11 @@ class RotationSystem(abc.ABC):
     @abc.abstractmethod
     def kicks(
         self,
-    ) -> dict[PieceType, dict[tuple[int, int], tuple[tuple[int, int], ...]]]:
+    ) -> KickTable:
         ...
 
 
-class StandardRotationSystem(RotationSystem):
+class SRS(RotationSystem):
     shapes = {
         PieceType.I: [
             ((1, 0), (1, 1), (1, 2), (1, 3)),
@@ -123,41 +124,36 @@ class StandardRotationSystem(RotationSystem):
     }
 
     @property
-    def kicks(
-        self,
-    ) -> dict[PieceType, dict[tuple[int, int], tuple[tuple[int, int], ...]]]:
+    def kicks(self) -> KickTable:
         default = {
             (0, 1): ((+0, -1), (-1, -1), (+2, +0), (+2, -1)),
-            (0, 2): ((-1, +0), (-1, +1), (-1, -1), (+0, +1), (+0, -1)),
             (0, 3): ((+0, +1), (-1, +1), (+2, +0), (+2, +1)),
             (1, 0): ((+0, +1), (+1, +1), (-2, +0), (-2, +1)),
             (1, 2): ((+0, +1), (+1, +1), (-2, +0), (-2, +1)),
-            (1, 3): ((+0, +1), (-2, +1), (-1, +1), (-2, +0), (-1, +0)),
-            (2, 0): ((+1, +0), (+1, -1), (+1, +1), (+0, -1), (+0, +1)),
             (2, 1): ((+0, -1), (-1, -1), (+2, +0), (+2, -1)),
             (2, 3): ((+0, +1), (-1, +1), (+2, +0), (+2, +1)),
             (3, 0): ((+0, -1), (+1, -1), (-2, +0), (-2, -1)),
-            (3, 1): ((+0, -1), (-2, -1), (-1, -1), (-2, +0), (-1, +0)),
             (3, 2): ((+0, -1), (+1, -1), (-2, +0), (-2, -1)),
+            # 180 kicks
+            (0, 2): (),
+            (1, 3): (),
+            (2, 0): (),
+            (3, 1): (),
         }
 
         i_kicks = {
             (0, 1): ((+0, -1), (+0, +1), (+1, -2), (-2, +1)),
-            (0, 2): ((-1, +0), (-1, +1), (-1, -1), (+0, +1), (+0, -1)),
             (0, 3): ((+0, -1), (+0, +2), (-2, -1), (+1, +2)),
             (1, 0): ((+0, +2), (+0, -1), (-1, +2), (+2, -1)),
             (1, 2): ((+0, -1), (+0, +2), (-2, -1), (+1, +2)),
-            (1, 3): ((+0, +1), (-2, +1), (-1, +1), (-2, +0), (-1, +0)),
-            (2, 0): ((+1, +0), (+1, -1), (+1, +1), (+0, -1), (+0, +1)),
             (2, 1): ((+0, +1), (+0, -2), (+2, +1), (-1, +2)),
             (2, 3): ((+0, +2), (+0, -1), (-1, +2), (+2, -1)),
             (3, 0): ((+0, +1), (+0, -2), (+2, +1), (-1, -2)),
-            (3, 1): ((+0, -1), (-2, -1), (-1, -1), (-2, +0), (-1, +0)),
             (3, 2): ((+0, -2), (+0, +1), (+1, -2), (-2, +1)),
         }
 
         return {
-            PieceType.I: i_kicks,
+            PieceType.I: default | i_kicks,
             PieceType.L: default,
             PieceType.J: default,
             PieceType.S: default,
@@ -167,10 +163,23 @@ class StandardRotationSystem(RotationSystem):
         }
 
 
+class TetrioSRS(SRS):
+    @property
+    def kicks(self) -> KickTable:
+        override = {
+            (0, 2): ((-1, +0), (-1, +1), (-1, -1), (+0, +1), (+0, -1)),
+            (1, 3): ((+0, +1), (-2, +1), (-1, +1), (-2, +0), (-1, +0)),
+            (2, 0): ((+1, +0), (+1, -1), (+1, +1), (+0, -1), (+0, +1)),
+            (3, 1): ((+0, -1), (-2, -1), (-1, -1), (-2, +0), (-1, +0)),
+        }
+
+        return {k: v | override for k, v in super().kicks.items()}
+
+
 @dataclasses.dataclass
 class Engine:
     queue: type[Queue]
     rs: RotationSystem
 
 
-DefaultEngine = Engine(queue=SevenBag, rs=StandardRotationSystem())
+DefaultEngine = Engine(queue=SevenBag, rs=SRS())
