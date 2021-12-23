@@ -1,5 +1,4 @@
 import curses
-from typing import Union
 
 import tetris
 
@@ -64,6 +63,9 @@ def main(screen: curses.window):
 
         else:
             status.addstr(5, 4, ". . .", curses.A_DIM)
+
+        status.addstr(7, 2, " Score ", curses.A_STANDOUT)
+        status.addstr(8, 2, format(game.score, ","))
 
         status.addstr(14, 2, "    Controls    ", curses.A_STANDOUT)
         status.addstr(

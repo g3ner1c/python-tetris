@@ -8,20 +8,10 @@ import numpy as np
 from .engine import DefaultEngine
 from .engine import Engine
 from .types import Board
+from .types import DeltaFrame
 from .types import Minos
+from .types import Piece
 from .types import PieceType
-
-
-@dataclasses.dataclass
-class Piece:
-    __slots__ = ("type", "x", "y", "r")
-
-    type: PieceType
-    x: int  # = max_x // 2 - 2
-    y: int  # = (max_y + 3) // 2 - 3
-    r: int  # = 0
-
-    # TODO: figure out where should the defaults above be
 
 
 def _shape(engine: Engine, piece: Piece) -> Minos:
@@ -50,8 +40,11 @@ class BaseGame:
         self.engine = engine
         self.seed = secrets.token_bytes()
         self.queue = engine.queue(self.seed)
+        self.scorer = engine.scorer()
+        self.score = 0
         self.board = np.zeros((40, 10), dtype=np.int8)
         self.piece = Piece(self.queue.pop(), 18, 3, 0)
+        self.delta = DeltaFrame(None, dataclasses.replace(self.piece))
         self.hold: Optional[PieceType] = None
         self.hold_lock = False
 
@@ -62,6 +55,8 @@ class BaseGame:
         piece = self.piece
         for x, y in _shape(self.engine, piece):
             self.board[x + piece.x, y + piece.y] = piece.type
+
+        self.score += self.scorer.judge(self.board, self.delta)
 
         for i, row in enumerate(self.board):
             if all(row):
@@ -88,7 +83,7 @@ class BaseGame:
 
         self.hold_lock = False
 
-    def render(self, tiles: list[str] = list(" ILJSZTOX@"), lines: int = 20) -> str:
+    def render(self, tiles: list[str] = list(" ILJSZTO@X"), lines: int = 20) -> str:
         board = self.board.copy()
         piece = self.piece
 
@@ -99,7 +94,7 @@ class BaseGame:
             ghost = dataclasses.replace(piece, x=x)
 
         for x, y in _shape(self.engine, ghost):
-            board[x + ghost.x, y + ghost.y] = 9
+            board[x + ghost.x, y + ghost.y] = 8
 
         for x, y in _shape(self.engine, piece):
             board[x + piece.x, y + piece.y] = piece.type
@@ -142,6 +137,8 @@ class BaseGame:
                 break
             piece.y = y
 
+        self.delta = DeltaFrame(self.delta.c_piece, dataclasses.replace(piece))
+
     def rotate(self, turns: int):
         piece = self.piece
         r = (piece.r + turns) % 4
@@ -158,6 +155,8 @@ class BaseGame:
                 piece.y += y
                 piece.r = r
                 break
+
+        self.delta = DeltaFrame(self.delta.c_piece, dataclasses.replace(piece))
 
     def hard_drop(self):
         self.drag(x=self.board.shape[0])
