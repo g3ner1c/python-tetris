@@ -1,11 +1,20 @@
 [tool.poetry]
-name = "tetris-engine"
+name = "tetris"
 version = "0.1.0"
-description = "guideline-compliant tetris engine"
+description = "Guideline-compliant Tetris engine"
 authors = ["Sofia \"dzshn\" N. L. <zshn@pm.me>"]
 license = "MIT"
-packages = [
-    { include = "tetris" }
+readme = "README.md"
+homepage = "https://github.com/dzshn/python-tetris"
+repository = "https://github.com/dzshn/python-tetris"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Topic :: Games/Entertainment",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed"
 ]
 
 [tool.poetry.dependencies]
@@ -21,6 +30,7 @@ tox = "^3.24.4"
 [tool.mypy]
 check_untyped_defs = true
 files = [
+    "examples/*.py",
     "tetris/*.py"
 ]
 python_version = "3.9"
