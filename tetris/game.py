@@ -164,3 +164,9 @@ class BaseGame:
 
     def soft_drop(self, height: int = 5) -> None:
         self.drag(x=height)
+
+    def __str__(self) -> str:
+        return self.render(tiles=[i + " " for i in " ILJSZTO@X"])
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(engine={self.engine})"
