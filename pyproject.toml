@@ -25,7 +25,6 @@ files = [
 ]
 python_version = "3.9"
 warn_redundant_casts = true
-warn_unused_ignores = true
 warn_unused_configs = true
 
 [tool.isort]

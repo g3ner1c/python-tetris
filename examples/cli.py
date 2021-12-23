@@ -17,7 +17,7 @@ keymap: dict[str, int] = {
 
 
 @curses.wrapper
-def main(screen: curses.window):
+def main(screen: curses.window) -> None:
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_RED, -1)
     curses.init_pair(2, curses.COLOR_GREEN, -1)
@@ -43,7 +43,7 @@ def main(screen: curses.window):
     board = screen.subwin(22, 22, 3, 5)
     status = screen.subwin(22, 20, 3, 28)
 
-    def render():
+    def render() -> None:
         screen.clear()
         for y, line in enumerate(game.render().splitlines()):
             for x, ch in enumerate(line):

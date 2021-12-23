@@ -62,7 +62,7 @@ class SevenBag(Queue):
         self._queue.append(self._next_piece())
         return piece
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"SevenBag(queue={self.pieces}, bag={self.bag})"
 
 
@@ -184,7 +184,7 @@ class Scorer(abc.ABC):
 
 
 class GuidelineScorer(Scorer):
-    def __init__(self):
+    def __init__(self):  # type: ignore[no-untyped-def]
         self.level = 1
         self.combo = 0
         self.back_to_back = 0

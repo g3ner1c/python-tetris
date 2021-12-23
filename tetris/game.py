@@ -48,10 +48,10 @@ class BaseGame:
         self.hold: Optional[PieceType] = None
         self.hold_lock = False
 
-    def reset(self):
+    def reset(self) -> None:
         pass
 
-    def lock_piece(self):
+    def lock_piece(self) -> None:
         piece = self.piece
         for x, y in _shape(self.engine, piece):
             self.board[x + piece.x, y + piece.y] = piece.type
@@ -60,7 +60,7 @@ class BaseGame:
 
         for i, row in enumerate(self.board):
             if all(row):
-                self.board = np.concatenate(
+                self.board = np.concatenate(  # type: ignore[no-untyped-call]
                     (
                         np.zeros((1, self.board.shape[1]), dtype=np.int8),
                         self.board[:i],
@@ -101,7 +101,7 @@ class BaseGame:
 
         return "\n".join("".join(tiles[j] for j in i) for i in board[-lines:])
 
-    def swap(self):
+    def swap(self) -> None:
         if self.hold_lock:
             return
 
@@ -116,10 +116,10 @@ class BaseGame:
         self.piece.r = 0
         self.hold_lock = True
 
-    def drag(self, x: int = 0, y: int = 0):
+    def drag(self, x: int = 0, y: int = 0) -> None:
         self.move(self.piece.x + x, self.piece.y + y)
 
-    def move(self, x: int = 0, y: int = 0):
+    def move(self, x: int = 0, y: int = 0) -> None:
         piece = self.piece
         board = self.board
         from_x = piece.x
@@ -139,7 +139,7 @@ class BaseGame:
 
         self.delta = DeltaFrame(self.delta.c_piece, dataclasses.replace(piece))
 
-    def rotate(self, turns: int):
+    def rotate(self, turns: int) -> None:
         piece = self.piece
         r = (piece.r + turns) % 4
 
@@ -158,9 +158,9 @@ class BaseGame:
 
         self.delta = DeltaFrame(self.delta.c_piece, dataclasses.replace(piece))
 
-    def hard_drop(self):
+    def hard_drop(self) -> None:
         self.drag(x=self.board.shape[0])
         self.lock_piece()
 
-    def soft_drop(self, height: int = 5):
+    def soft_drop(self, height: int = 5) -> None:
         self.drag(x=height)
