@@ -31,11 +31,6 @@ class Queue(abc.ABC):
     def pieces(self) -> QueueSeq:
         ...
 
-    @property
-    @abc.abstractmethod
-    def bag(self) -> QueueSeq:
-        ...
-
     @abc.abstractmethod
     def pop(self) -> PieceType:
         ...

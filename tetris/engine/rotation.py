@@ -100,3 +100,10 @@ class TetrioSRS(SRS):
         }
 
         return {k: v | override for k, v in super().kicks.items()}
+
+
+class NoKicks(RotationSystem):
+    kicks: KickTable = {
+        i: {(i, j): tuple() for i in range(4) for j in range(4) if i != j}
+        for i in PieceType
+    }

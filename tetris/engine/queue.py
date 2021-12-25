@@ -36,3 +36,22 @@ class SevenBag(Queue):
 
     def __repr__(self) -> str:
         return f"SevenBag(queue={self.pieces}, bag={self.bag})"
+
+
+class Chaotic(Queue):
+    def __init__(self, seed: Seed):
+        self._random = random.Random(seed)
+        self._queue = []
+        for _ in range(4):
+            self._queue.append(PieceType(self._random.randint(1, 7)))
+
+    @property
+    def pieces(self) -> QueueSeq:
+        return self._queue.copy()
+
+    def pop(self) -> PieceType:
+        self._queue.append(PieceType(self._random.randint(1, 7)))
+        return self._queue.pop(0)
+
+    def __repr__(self) -> str:
+        return "Chaotic()"

@@ -77,3 +77,13 @@ class GuidelineScorer(Scorer):
                 score += 200 * self.level
 
         return score
+
+
+class NoScorer(Scorer):
+    def judge(self, board: Board, delta: DeltaFrame) -> int:
+        return 0
+
+
+class BPSScorer(Scorer):
+    def judge(self, board: Board, delta: DeltaFrame) -> int:
+        return [0, 40, 100, 300, 1200][sum(all(row) for row in board)]
