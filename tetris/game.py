@@ -5,13 +5,13 @@ from typing import Optional
 
 import numpy as np
 
-from .engine import DefaultEngine
-from .engine import Engine
-from .types import Board
-from .types import DeltaFrame
-from .types import Minos
-from .types import Piece
-from .types import PieceType
+from tetris.engine import DefaultEngine
+from tetris.engine import Engine
+from tetris.types import Board
+from tetris.types import DeltaFrame
+from tetris.types import Minos
+from tetris.types import Piece
+from tetris.types import PieceType
 
 
 def _shape(engine: Engine, piece: Piece) -> Minos:

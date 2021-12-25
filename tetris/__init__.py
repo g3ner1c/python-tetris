@@ -1,7 +1,7 @@
-from .engine import DefaultEngine
-from .engine import Engine
-from .game import BaseGame
-from .types import Piece
-from .types import PieceType
+from tetris.engine import DefaultEngine
+from tetris.engine import Engine
+from tetris.game import BaseGame
+from tetris.types import Piece
+from tetris.types import PieceType
 
 __all__ = ("BaseGame", "DefaultEngine", "Engine", "Piece", "PieceType")

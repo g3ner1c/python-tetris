@@ -3,13 +3,13 @@ import dataclasses
 import random
 from collections.abc import Iterator
 
-from .types import Board
-from .types import DeltaFrame
-from .types import KickTable
-from .types import Minos
-from .types import PieceType
-from .types import QueueSeq
-from .types import Seed
+from tetris.types import Board
+from tetris.types import DeltaFrame
+from tetris.types import KickTable
+from tetris.types import Minos
+from tetris.types import PieceType
+from tetris.types import QueueSeq
+from tetris.types import Seed
 
 
 class Queue(abc.ABC):
