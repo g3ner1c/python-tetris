@@ -68,10 +68,8 @@ class BaseGame:
                     )
                 )
 
-        for x, y in _shape(self.engine, piece):
-            if x + piece.x < 10:
-                self.reset()
-                break
+        if all(x < 20 for x, y in _shape(self.engine, piece)):
+            self.reset()
 
         self.piece.type = self.queue.pop()
         self.piece.x = 18
