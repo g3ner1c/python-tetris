@@ -1,7 +1,5 @@
 import dataclasses
 import enum
-from collections.abc import Iterator
-from collections.abc import Sequence
 from typing import Optional, Union
 
 import numpy as np
@@ -12,7 +10,6 @@ Board = NDArray[np.int8]
 KickTable = dict[PieceType, dict[tuple[int, int], tuple[tuple[int, int], ...]]]
 Minos = tuple[tuple[int, int], ...]
 Seed = Union[str, bytes, int]
-QueueSeq = Union[Sequence[PieceType], Iterator[PieceType]]
 
 
 @dataclasses.dataclass

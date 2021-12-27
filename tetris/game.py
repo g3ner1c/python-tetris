@@ -39,7 +39,7 @@ class BaseGame:
     def __init__(self, engine: Engine = DefaultEngine):
         self.engine = engine
         self.seed = secrets.token_bytes()
-        self.queue = engine.queue(self.seed)
+        self.queue = engine.queue(seed=self.seed)
         self.scorer = engine.scorer()
         self.score = 0
         self.board = np.zeros((40, 10), dtype=np.int8)
