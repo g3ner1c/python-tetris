@@ -21,13 +21,13 @@ class GuidelineScorer(Scorer):
             mx, my = board.shape
 
             # fmt: off
-            if x + 2 < mx and x + 2 < my:
+            if x + 2 < mx and y + 2 < my:
                 corners = sum(board[(x + 0, x + 2, x + 0, x + 2),
                                     (y + 0, y + 0, y + 2, y + 2)] != 0)
-            elif x + 2 > mx and x + 2 < my:
+            elif x + 2 > mx and y + 2 < my:
                 corners = sum(board[(x + 0, x + 0),
                                     (y + 0, y + 2)] != 0) + 2
-            elif y + 2 < my and x + 1 > mx:
+            elif x + 2 < mx and y + 2 > my:
                 corners = sum(board[(x + 0, x + 2),
                                     (y + 0, y + 0)] != 0) + 2
 
