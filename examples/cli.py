@@ -1,18 +1,18 @@
 import curses
 
 import tetris
+from tetris import Move
 
 game = tetris.BaseGame()
 
-keymap: dict[str, int] = {
-    "rotate-left": ord("z"),
-    "rotate-right": curses.KEY_UP,
-    "move-left": curses.KEY_LEFT,
-    "move-right": curses.KEY_RIGHT,
-    "soft-drop": curses.KEY_DOWN,
-    "hard-drop": ord(" "),
-    "swap": ord("c"),
-    "quit": ord("q"),
+moves: dict[int, Move] = {
+    ord("z"): Move.rotate(-1),
+    curses.KEY_UP: Move.rotate(+1),
+    curses.KEY_LEFT: Move.left(),
+    curses.KEY_RIGHT: Move.right(),
+    curses.KEY_DOWN: Move.soft_drop(),
+    ord(" "): Move.hard_drop(),
+    ord("c"): Move.swap(),
 }
 
 
@@ -87,23 +87,11 @@ def main(screen: curses.window) -> None:
         while True:
             render()
             ch = screen.getch()
-
-            if ch == keymap["quit"]:
+            if ch == ord("q"):
                 break
-            if ch == keymap["rotate-left"]:
-                game.rotate(turns=-1)
-            if ch == keymap["rotate-right"]:
-                game.rotate(turns=+1)
-            if ch == keymap["move-left"]:
-                game.drag(y=-1)
-            if ch == keymap["move-right"]:
-                game.drag(y=+1)
-            if ch == keymap["soft-drop"]:
-                game.soft_drop()
-            if ch == keymap["hard-drop"]:
-                game.hard_drop()
-            if ch == keymap["swap"]:
-                game.swap()
+
+            if ch in moves:
+                game.push(moves[ch])
 
     except KeyboardInterrupt:
         pass

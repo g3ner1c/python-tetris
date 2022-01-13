@@ -10,6 +10,8 @@ from tetris.engine import Engine
 from tetris.types import Board
 from tetris.types import DeltaFrame
 from tetris.types import Minos
+from tetris.types import Move
+from tetris.types import MoveType
 from tetris.types import Piece
 from tetris.types import PieceType
 
@@ -51,8 +53,13 @@ class BaseGame:
     def reset(self) -> None:
         pass
 
-    def lock_piece(self) -> None:
+    def _lock_piece(self) -> None:
         piece = self.piece
+        for x in range(piece.x, self.board.shape[0]):
+            if _overlaps(self.engine, dataclasses.replace(piece, x=x), self.board):
+                break
+            piece.x = x
+
         for x, y in _shape(self.engine, piece):
             self.board[x + piece.x, y + piece.y] = piece.type
 
@@ -99,7 +106,7 @@ class BaseGame:
 
         return "\n".join("".join(tiles[j] for j in i) for i in board[-lines:])
 
-    def swap(self) -> None:
+    def _swap(self) -> None:
         if self.hold_lock:
             return
 
@@ -114,10 +121,10 @@ class BaseGame:
         self.piece.r = 0
         self.hold_lock = True
 
-    def drag(self, x: int = 0, y: int = 0) -> None:
-        self.move(self.piece.x + x, self.piece.y + y)
+    def _move_relative(self, x: int = 0, y: int = 0) -> None:
+        self._move(self.piece.x + x, self.piece.y + y)
 
-    def move(self, x: int = 0, y: int = 0) -> None:
+    def _move(self, x: int = 0, y: int = 0) -> None:
         piece = self.piece
         board = self.board
         from_x = piece.x
@@ -137,7 +144,7 @@ class BaseGame:
 
         self.delta = DeltaFrame(self.delta.c_piece, dataclasses.replace(piece))
 
-    def rotate(self, turns: int) -> None:
+    def _rotate(self, turns: int) -> None:
         piece = self.piece
         r = (piece.r + turns) % 4
 
@@ -156,12 +163,39 @@ class BaseGame:
 
         self.delta = DeltaFrame(self.delta.c_piece, dataclasses.replace(piece))
 
-    def hard_drop(self) -> None:
-        self.drag(x=self.board.shape[0])
-        self.lock_piece()
+    def push(self, move: Move) -> None:
+        if move.type == MoveType.drag:
+            assert move.delta
+            self._move_relative(y=move.delta)
 
-    def soft_drop(self, height: int = 5) -> None:
-        self.drag(x=height)
+        if move.type == MoveType.rotate:
+            assert move.delta
+            self._rotate(turns=move.delta)
+
+        if move.type == MoveType.drop:
+            if move.delta:
+                self._move_relative(x=move.delta)
+
+        if move.lock:
+            self._lock_piece()
+
+        if move.type == MoveType.swap:
+            self._swap()
+
+    def drag(self, tiles: int):
+        self.push(Move.drag(tiles))
+
+    def rotate(self, turns: int = 1):
+        self.push(Move.rotate(turns))
+
+    def soft_drop(self, tiles: int):
+        self.push(Move.soft_drop(tiles))
+
+    def hard_drop(self):
+        self.push(Move.hard_drop())
+
+    def swap(self):
+        self.push(Move.swap())
 
     def __str__(self) -> str:
         return self.render(tiles=[i + " " for i in " ILJSZTO@X"])

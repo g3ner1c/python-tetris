@@ -10,6 +10,7 @@ Board = NDArray[np.int8]
 KickTable = dict[PieceType, dict[tuple[int, int], tuple[tuple[int, int], ...]]]
 Minos = tuple[tuple[int, int], ...]
 Seed = Union[str, bytes, int]
+MoveType = enum.Enum("MoveType", "drag rotate drop swap")
 
 
 @dataclasses.dataclass
@@ -51,3 +52,38 @@ class DeltaFrame:
             return self.c_piece.r
 
         return (self.c_piece.r - self.p_piece.r) % 4
+
+
+@dataclasses.dataclass
+class Move:
+    type: MoveType
+    delta: Optional[int] = None
+    lock: bool = False
+
+    @classmethod
+    def drag(cls, delta: int):
+        return cls(MoveType.drag, delta=delta)
+
+    @classmethod
+    def left(cls, tiles: int = 1) -> "Move":
+        return cls(MoveType.drag, -tiles)
+
+    @classmethod
+    def right(cls, tiles: int = 1) -> "Move":
+        return cls(MoveType.drag, +tiles)
+
+    @classmethod
+    def rotate(cls, turns: int = 1) -> "Move":
+        return cls(MoveType.rotate, delta=turns)
+
+    @classmethod
+    def hard_drop(cls) -> "Move":
+        return cls(MoveType.drop, lock=True)
+
+    @classmethod
+    def soft_drop(cls, tiles: int = 1) -> "Move":
+        return cls(MoveType.drop, delta=tiles)
+
+    @classmethod
+    def swap(cls) -> "Move":
+        return cls(MoveType.swap)
