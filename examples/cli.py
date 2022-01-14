@@ -23,7 +23,7 @@ def main(screen: curses.window) -> None:
     for i in range(8):
         curses.init_pair(i, i, -1)
 
-    colors = [
+    curses_colors = [
         curses.COLOR_BLACK,
         curses.COLOR_BLUE,
         curses.COLOR_CYAN,
@@ -35,7 +35,7 @@ def main(screen: curses.window) -> None:
     ]
 
     black, blue, cyan, green, magenta, red, white, yellow = (
-        curses.color_pair(i) for i in colors
+        curses.color_pair(i) for i in curses_colors
     )
 
     colors = {
