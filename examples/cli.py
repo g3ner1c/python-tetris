@@ -91,6 +91,7 @@ def main(screen: curses.window) -> None:
                 "  hard drop: space  "
                 "  swap piece:    c  "
                 "  pause:         p  "
+                "  restart:       r  "
                 "  quit: Ctrl-C / q  "
             ),
         )
@@ -107,6 +108,9 @@ def main(screen: curses.window) -> None:
 
             if ch == ord("p"):
                 game.pause()
+
+            if ch == ord("r"):
+                game.reset()
 
             if ch in moves:
                 game.push(moves[ch])

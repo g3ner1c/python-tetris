@@ -52,6 +52,18 @@ class BaseGame:
         self.hold: Optional[PieceType] = None
         self.hold_lock = False
 
+    def reset(self) -> None:
+        self.seed = secrets.token_bytes()
+        self.queue = self.engine.queue(seed=self.seed)
+        self.scorer = self.engine.scorer()
+        self.score = 0
+        self.board = np.zeros((40, 10), dtype=np.int8)
+        self.piece = Piece(self.queue.pop(), 18, 3, 0)
+        self.status = PlayingStatus.playing
+        self.delta = DeltaFrame(None, dataclasses.replace(self.piece))
+        self.hold = None
+        self.hold_lock = False
+
     def _lose(self) -> None:
         self.status = PlayingStatus.stopped
 
