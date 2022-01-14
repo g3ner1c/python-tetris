@@ -19,24 +19,36 @@ moves: dict[int, Move] = {
 @curses.wrapper
 def main(screen: curses.window) -> None:
     curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_RED, -1)
-    curses.init_pair(2, curses.COLOR_GREEN, -1)
-    curses.init_pair(3, curses.COLOR_YELLOW, -1)
-    curses.init_pair(4, curses.COLOR_BLUE, -1)
-    curses.init_pair(5, curses.COLOR_MAGENTA, -1)
-    curses.init_pair(6, curses.COLOR_CYAN, -1)
-    curses.init_pair(7, curses.COLOR_WHITE, -1)
+
+    for i in range(8):
+        curses.init_pair(i, i, -1)
+
+    colors = [
+        curses.COLOR_BLACK,
+        curses.COLOR_BLUE,
+        curses.COLOR_CYAN,
+        curses.COLOR_GREEN,
+        curses.COLOR_MAGENTA,
+        curses.COLOR_RED,
+        curses.COLOR_WHITE,
+        curses.COLOR_YELLOW,
+    ]
+
+    black, blue, cyan, green, magenta, red, white, yellow = (
+        curses.color_pair(i) for i in colors
+    )
+
     colors = {
         " ": curses.A_NORMAL,
-        "I": curses.color_pair(6),
-        "L": curses.color_pair(3),
-        "J": curses.color_pair(4),
-        "S": curses.color_pair(2),
-        "Z": curses.color_pair(1),
-        "T": curses.color_pair(5),
-        "O": curses.color_pair(3),
-        "X": curses.A_DIM,
-        "@": curses.color_pair(7),
+        "I": cyan,
+        "L": yellow,
+        "J": blue,
+        "S": green,
+        "Z": red,
+        "T": magenta,
+        "O": yellow,
+        "X": black,
+        "@": white,
     }
 
     curses.curs_set(0)
@@ -48,10 +60,10 @@ def main(screen: curses.window) -> None:
         for y, line in enumerate(game.render().splitlines()):
             for x, ch in enumerate(line):
                 paint = colors[ch]
-                if game.paused:
+                if not game.playing:
                     paint = paint | curses.A_DIM
 
-                if ch not in [" ", "@"]:
+                if ch not in [" ", "@", "X"]:
                     ch = "[]"
 
                 board.addstr(y + 1, x * 2 + 1, ch, paint)
@@ -68,14 +80,10 @@ def main(screen: curses.window) -> None:
             status.addstr(5, 4, ". . .", curses.A_DIM)
 
         if game.lost:
-            board.addstr(
-                11, 2, "    Game over!    ", curses.A_REVERSE | curses.color_pair(1)
-            )
+            board.addstr(11, 2, "    Game over!    ", curses.A_REVERSE | red)
 
         if game.paused:
-            board.addstr(
-                11, 2, "      Paused      ", curses.A_REVERSE | curses.color_pair(3)
-            )
+            board.addstr(11, 2, "      Paused      ", curses.A_REVERSE | yellow)
 
         status.addstr(7, 2, " Score ", curses.A_STANDOUT)
         status.addstr(8, 2, format(game.score, ","))
@@ -106,13 +114,13 @@ def main(screen: curses.window) -> None:
             if ch == ord("q"):
                 break
 
-            if ch == ord("p"):
+            elif ch == ord("p"):
                 game.pause()
 
-            if ch == ord("r"):
+            elif ch == ord("r"):
                 game.reset()
 
-            if ch in moves:
+            elif ch in moves:
                 game.push(moves[ch])
 
     except KeyboardInterrupt:
