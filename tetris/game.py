@@ -14,6 +14,7 @@ from tetris.types import Move
 from tetris.types import MoveType
 from tetris.types import Piece
 from tetris.types import PieceType
+from tetris.types import PlayingStatus
 
 
 def _shape(engine: Engine, piece: Piece) -> Minos:
@@ -46,12 +47,32 @@ class BaseGame:
         self.score = 0
         self.board = np.zeros((40, 10), dtype=np.int8)
         self.piece = Piece(self.queue.pop(), 18, 3, 0)
+        self.status = PlayingStatus.playing
         self.delta = DeltaFrame(None, dataclasses.replace(self.piece))
         self.hold: Optional[PieceType] = None
         self.hold_lock = False
 
-    def reset(self) -> None:
-        pass
+    def _lose(self) -> None:
+        self.status = PlayingStatus.stopped
+
+    @property
+    def playing(self) -> bool:
+        return self.status == PlayingStatus.playing
+
+    @property
+    def paused(self) -> bool:
+        return self.status == PlayingStatus.idle
+
+    @property
+    def lost(self) -> bool:
+        return self.status == PlayingStatus.stopped
+
+    def pause(self, state: Optional[bool] = None) -> None:
+        if self.status == PlayingStatus.playing and (state is None or state is True):
+            self.status = PlayingStatus.idle
+
+        elif self.status == PlayingStatus.idle and (state is None or state is False):
+            self.status = PlayingStatus.playing
 
     def _lock_piece(self) -> None:
         piece = self.piece
@@ -62,6 +83,14 @@ class BaseGame:
 
         for x, y in _shape(self.engine, piece):
             self.board[x + piece.x, y + piece.y] = piece.type
+
+        # If all tiles are out of view (half of the internal size), it's a lock-out
+        for x, y in _shape(self.engine, piece):
+            if self.piece.x + x > self.board.shape[0] / 2:
+                break
+
+        else:
+            self._lose()
 
         self.score += self.scorer.judge(self.board, self.delta)
 
@@ -75,22 +104,21 @@ class BaseGame:
                     )
                 )
 
-        if all(x < 20 for x, y in _shape(self.engine, piece)):
-            self.reset()
-
         self.piece.type = self.queue.pop()
         self.piece.x = 18
         self.piece.y = 3
         self.piece.r = 0
 
+        # If the new piece overlaps, it's a block-out
         if _overlaps(self.engine, self.piece, self.board):
-            self.reset()
+            self._lose()
 
         self.hold_lock = False
 
     def render(self, tiles: list[str] = list(" ILJSZTO@X"), lines: int = 20) -> str:
         board = self.board.copy()
         piece = self.piece
+        ghost = dataclasses.replace(piece)
 
         for x in range(piece.x, board.shape[0]):
             if _overlaps(self.engine, dataclasses.replace(piece, x=x), board):
@@ -164,6 +192,9 @@ class BaseGame:
         self.delta = DeltaFrame(self.delta.c_piece, dataclasses.replace(piece))
 
     def push(self, move: Move) -> None:
+        if self.status != PlayingStatus.playing:
+            return
+
         if move.type == MoveType.drag:
             assert move.delta
             self._move_relative(y=move.delta)

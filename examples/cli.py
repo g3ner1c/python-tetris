@@ -48,6 +48,9 @@ def main(screen: curses.window) -> None:
         for y, line in enumerate(game.render().splitlines()):
             for x, ch in enumerate(line):
                 paint = colors[ch]
+                if game.paused:
+                    paint = paint | curses.A_DIM
+
                 if ch not in [" ", "@"]:
                     ch = "[]"
 
@@ -64,12 +67,22 @@ def main(screen: curses.window) -> None:
         else:
             status.addstr(5, 4, ". . .", curses.A_DIM)
 
+        if game.lost:
+            board.addstr(
+                11, 2, "    Game over!    ", curses.A_REVERSE | curses.color_pair(1)
+            )
+
+        if game.paused:
+            board.addstr(
+                11, 2, "      Paused      ", curses.A_REVERSE | curses.color_pair(3)
+            )
+
         status.addstr(7, 2, " Score ", curses.A_STANDOUT)
         status.addstr(8, 2, format(game.score, ","))
 
-        status.addstr(14, 2, "    Controls    ", curses.A_STANDOUT)
+        status.addstr(11, 2, "    Controls    ", curses.A_STANDOUT)
         status.addstr(
-            16,
+            13,
             0,
             (
                 "  rotate:   z / up  "
@@ -77,6 +90,8 @@ def main(screen: curses.window) -> None:
                 "  soft drop:  down  "
                 "  hard drop: space  "
                 "  swap piece:    c  "
+                "  pause:         p  "
+                "  quit: Ctrl-C / q  "
             ),
         )
 
@@ -89,6 +104,9 @@ def main(screen: curses.window) -> None:
             ch = screen.getch()
             if ch == ord("q"):
                 break
+
+            if ch == ord("p"):
+                game.pause()
 
             if ch in moves:
                 game.push(moves[ch])

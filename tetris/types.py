@@ -6,11 +6,12 @@ import numpy as np
 from numpy.typing import NDArray
 
 PieceType = enum.IntEnum("PieceType", "I L J S Z T O")
+MoveType = enum.Enum("MoveType", "drag rotate drop swap")
+PlayingStatus = enum.Enum("PlayingStatus", "playing idle stopped")
 Board = NDArray[np.int8]
 KickTable = dict[PieceType, dict[tuple[int, int], tuple[tuple[int, int], ...]]]
 Minos = tuple[tuple[int, int], ...]
 Seed = Union[str, bytes, int]
-MoveType = enum.Enum("MoveType", "drag rotate drop swap")
 
 
 @dataclasses.dataclass
