@@ -8,10 +8,10 @@ import numpy as np
 from tetris.engine import DefaultEngine
 from tetris.engine import Engine
 from tetris.types import Board
-from tetris.types import DeltaFrame
 from tetris.types import Minos
 from tetris.types import Move
-from tetris.types import MoveType
+from tetris.types import MoveDelta
+from tetris.types import MoveKind
 from tetris.types import Piece
 from tetris.types import PieceType
 from tetris.types import PlayingStatus
@@ -48,7 +48,7 @@ class BaseGame:
         self.board = np.zeros((40, 10), dtype=np.int8)
         self.piece = Piece(self.queue.pop(), 18, 3, 0)
         self.status = PlayingStatus.playing
-        self.delta = DeltaFrame(None, dataclasses.replace(self.piece))
+        self.delta: Optional[MoveDelta] = None
         self.hold: Optional[PieceType] = None
         self.hold_lock = False
 
@@ -60,7 +60,7 @@ class BaseGame:
         self.board = np.zeros((40, 10), dtype=np.int8)
         self.piece = Piece(self.queue.pop(), 18, 3, 0)
         self.status = PlayingStatus.playing
-        self.delta = DeltaFrame(None, dataclasses.replace(self.piece))
+        self.delta = None
         self.hold = None
         self.hold_lock = False
 
@@ -87,11 +87,13 @@ class BaseGame:
             self.status = PlayingStatus.playing
 
     def _lock_piece(self) -> None:
+        assert self.delta
         piece = self.piece
-        for x in range(piece.x, self.board.shape[0]):
+        for x in range(piece.x + 1, self.board.shape[0]):
             if _overlaps(self.engine, dataclasses.replace(piece, x=x), self.board):
                 break
             piece.x = x
+            self.delta.x += 1
 
         for x, y in _shape(self.engine, piece):
             self.board[x + piece.x, y + piece.y] = piece.type
@@ -104,10 +106,9 @@ class BaseGame:
         else:
             self._lose()
 
-        self.score += self.scorer.judge(self.board, self.delta)
-
         for i, row in enumerate(self.board):
             if all(row):
+                self.delta.clears.append(i)
                 self.board = np.concatenate(  # type: ignore[no-untyped-call]
                     (
                         np.zeros((1, self.board.shape[1]), dtype=np.int8),
@@ -165,6 +166,7 @@ class BaseGame:
         self._move(self.piece.x + x, self.piece.y + y)
 
     def _move(self, x: int = 0, y: int = 0) -> None:
+        assert self.delta
         piece = self.piece
         board = self.board
         from_x = piece.x
@@ -174,17 +176,20 @@ class BaseGame:
         for x in range(from_x, x + x_step, x_step):
             if _overlaps(self.engine, dataclasses.replace(piece, x=x), board):
                 break
+
+            self.delta.x = x - piece.x
             piece.x = x
 
         y_step = int(math.copysign(1, y - from_y))
         for y in range(from_y, y + y_step, y_step):
             if _overlaps(self.engine, dataclasses.replace(piece, y=y), board):
                 break
+
+            self.delta.y = y - piece.y
             piece.y = y
 
-        self.delta = DeltaFrame(self.delta.c_piece, dataclasses.replace(piece))
-
     def _rotate(self, turns: int) -> None:
+        assert self.delta
         piece = self.piece
         r = (piece.r + turns) % 4
 
@@ -199,31 +204,34 @@ class BaseGame:
                 piece.x += x
                 piece.y += y
                 piece.r = r
-                break
 
-        self.delta = DeltaFrame(self.delta.c_piece, dataclasses.replace(piece))
+                self.delta.x = x
+                self.delta.y = y
+                self.delta.r = turns
+                break
 
     def push(self, move: Move) -> None:
         if self.status != PlayingStatus.playing:
             return
 
-        if move.type == MoveType.drag:
-            assert move.delta
-            self._move_relative(y=move.delta)
+        self.delta = MoveDelta(kind=move.kind, game=self, x=move.x, y=move.y, r=move.r)
 
-        if move.type == MoveType.rotate:
-            assert move.delta
-            self._rotate(turns=move.delta)
+        if move.kind == MoveKind.drag:
+            self._move_relative(y=move.y)
 
-        if move.type == MoveType.drop:
-            if move.delta:
-                self._move_relative(x=move.delta)
+        elif move.kind == MoveKind.rotate:
+            self._rotate(turns=move.r)
 
-        if move.lock:
+        elif move.kind == MoveKind.soft_drop:
+            self._move_relative(x=move.x)
+
+        elif move.kind == MoveKind.swap:
+            self._swap()
+
+        elif move.kind == MoveKind.hard_drop:
             self._lock_piece()
 
-        if move.type == MoveType.swap:
-            self._swap()
+        self.score += self.scorer.judge(self.delta)
 
     def drag(self, tiles: int):
         self.push(Move.drag(tiles))

@@ -6,10 +6,9 @@ from collections.abc import Iterator
 from collections.abc import Sequence
 from typing import Optional, overload
 
-from tetris.types import Board
-from tetris.types import DeltaFrame
 from tetris.types import KickTable
 from tetris.types import Minos
+from tetris.types import MoveDelta
 from tetris.types import PieceType
 from tetris.types import Seed
 
@@ -84,5 +83,5 @@ class Queue(abc.ABC, Sequence):
 
 class Scorer(abc.ABC):
     @abc.abstractmethod
-    def judge(self, board: Board, delta: DeltaFrame) -> int:
+    def judge(self, delta: MoveDelta) -> int:
         ...
