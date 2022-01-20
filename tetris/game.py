@@ -108,14 +108,9 @@ class BaseGame:
 
         for i, row in enumerate(self.board):
             if all(row):
+                self.board[0] = 0
+                self.board[1 : i + 1] = self.board[:i]
                 self.delta.clears.append(i)
-                self.board = np.concatenate(  # type: ignore[no-untyped-call]
-                    (
-                        np.zeros((1, self.board.shape[1]), dtype=np.int8),
-                        self.board[:i],
-                        self.board[i + 1 :],
-                    )
-                )
 
         self.piece.type = self.queue.pop()
         self.piece.x = 18
