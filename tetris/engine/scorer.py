@@ -19,7 +19,7 @@ class GuidelineScorer(Scorer):
 
         elif delta.kind == MoveKind.hard_drop:
             if not delta.auto:
-                score += delta.x * self.level
+                score += delta.x * self.level * 2
 
             piece = delta.game.piece
             board = delta.game.board
