@@ -11,8 +11,8 @@ from tetris.engine.scorer import GuidelineScorer
 @dataclasses.dataclass
 class Engine:
     queue: type[Queue]
-    rs: RotationSystem
+    rs: type[RotationSystem]
     scorer: type[Scorer]
 
 
-DefaultEngine = Engine(queue=SevenBag, rs=SRS(), scorer=GuidelineScorer)
+DefaultEngine = Engine(queue=SevenBag, rs=SRS, scorer=GuidelineScorer)

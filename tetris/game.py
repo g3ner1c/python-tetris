@@ -7,46 +7,23 @@ import numpy as np
 
 from tetris.engine import DefaultEngine
 from tetris.engine import Engine
-from tetris.types import Board
-from tetris.types import Minos
 from tetris.types import Move
 from tetris.types import MoveDelta
 from tetris.types import MoveKind
-from tetris.types import Piece
 from tetris.types import PieceType
 from tetris.types import PlayingStatus
-
-
-def _shape(engine: Engine, piece: Piece) -> Minos:
-    return engine.rs.shapes[piece.type][piece.r]
-
-
-def _overlaps(engine: Engine, piece: Piece, board: Board) -> bool:
-    for x, y in _shape(engine, piece):
-        x += piece.x
-        y += piece.y
-
-        if x not in range(board.shape[0]):
-            return True
-
-        if y not in range(board.shape[1]):
-            return True
-
-        if board[x, y] != 0:
-            return True
-
-    return False
 
 
 class BaseGame:
     def __init__(self, engine: Engine = DefaultEngine):
         self.engine = engine
         self.seed = secrets.token_bytes()
+        self.board = np.zeros((40, 10), dtype=np.int8)
         self.queue = engine.queue(seed=self.seed)
+        self.rs = engine.rs(self.board)
         self.scorer = engine.scorer()
         self.score = 0
-        self.board = np.zeros((40, 10), dtype=np.int8)
-        self.piece = Piece(self.queue.pop(), 18, 3, 0)
+        self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing
         self.delta: Optional[MoveDelta] = None
         self.hold: Optional[PieceType] = None
@@ -58,7 +35,7 @@ class BaseGame:
         self.scorer = self.engine.scorer()
         self.score = 0
         self.board = np.zeros((40, 10), dtype=np.int8)
-        self.piece = Piece(self.queue.pop(), 18, 3, 0)
+        self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing
         self.delta = None
         self.hold = None
@@ -90,16 +67,17 @@ class BaseGame:
         assert self.delta
         piece = self.piece
         for x in range(piece.x + 1, self.board.shape[0]):
-            if _overlaps(self.engine, dataclasses.replace(piece, x=x), self.board):
+            if self.rs.overlaps(dataclasses.replace(piece, x=x)):
                 break
+
             piece.x = x
             self.delta.x += 1
 
-        for x, y in _shape(self.engine, piece):
+        for x, y in piece.minos:
             self.board[x + piece.x, y + piece.y] = piece.type
 
         # If all tiles are out of view (half of the internal size), it's a lock-out
-        for x, y in _shape(self.engine, piece):
+        for x, y in piece.minos:
             if self.piece.x + x > self.board.shape[0] / 2:
                 break
 
@@ -112,13 +90,10 @@ class BaseGame:
                 self.board[1 : i + 1] = self.board[:i]
                 self.delta.clears.append(i)
 
-        self.piece.type = self.queue.pop()
-        self.piece.x = 18
-        self.piece.y = 3
-        self.piece.r = 0
+        self.piece = self.rs.spawn(self.queue.pop())
 
         # If the new piece overlaps, it's a block-out
-        if _overlaps(self.engine, self.piece, self.board):
+        if self.rs.overlaps(self.piece):
             self._lose()
 
         self.hold_lock = False
@@ -126,18 +101,16 @@ class BaseGame:
     def render(self, tiles: list[str] = list(" ILJSZTO@X"), lines: int = 20) -> str:
         board = self.board.copy()
         piece = self.piece
-        ghost = dataclasses.replace(piece)
+        ghost_x = piece.x
 
-        for x in range(piece.x, board.shape[0]):
-            if _overlaps(self.engine, dataclasses.replace(piece, x=x), board):
+        for x in range(piece.x + 1, board.shape[0]):
+            if self.rs.overlaps(minos=piece.minos, px=x, py=piece.y):
                 break
 
-            ghost = dataclasses.replace(piece, x=x)
+            ghost_x = x
 
-        for x, y in _shape(self.engine, ghost):
-            board[x + ghost.x, y + ghost.y] = 8
-
-        for x, y in _shape(self.engine, piece):
+        for x, y in piece.minos:
+            board[x + ghost_x, y + piece.y] = 8
             board[x + piece.x, y + piece.y] = piece.type
 
         return "\n".join("".join(tiles[j] for j in i) for i in board[-lines:])
@@ -147,14 +120,11 @@ class BaseGame:
             return
 
         if self.hold is None:
-            self.hold, self.piece.type = self.piece.type, self.queue.pop()
+            self.hold, self.piece = self.piece.type, self.rs.spawn(self.queue.pop())
 
         else:
-            self.hold, self.piece.type = self.piece.type, self.hold
+            self.hold, self.piece = self.piece.type, self.rs.spawn(self.hold)
 
-        self.piece.x = 18
-        self.piece.y = 3
-        self.piece.r = 0
         self.hold_lock = True
 
     def _move_relative(self, x: int = 0, y: int = 0) -> None:
@@ -163,13 +133,12 @@ class BaseGame:
     def _move(self, x: int = 0, y: int = 0) -> None:
         assert self.delta
         piece = self.piece
-        board = self.board
         from_x = piece.x
         from_y = piece.y
 
         x_step = int(math.copysign(1, x - from_x))
         for x in range(from_x, x + x_step, x_step):
-            if _overlaps(self.engine, dataclasses.replace(piece, x=x), board):
+            if self.rs.overlaps(dataclasses.replace(piece, x=x)):
                 break
 
             self.delta.x = x - piece.x
@@ -177,7 +146,7 @@ class BaseGame:
 
         y_step = int(math.copysign(1, y - from_y))
         for y in range(from_y, y + y_step, y_step):
-            if _overlaps(self.engine, dataclasses.replace(piece, y=y), board):
+            if self.rs.overlaps(dataclasses.replace(piece, y=y)):
                 break
 
             self.delta.y = y - piece.y
@@ -186,24 +155,13 @@ class BaseGame:
     def _rotate(self, turns: int) -> None:
         assert self.delta
         piece = self.piece
-        r = (piece.r + turns) % 4
-
-        kicks = ((+0, +0),) + self.engine.rs.kicks[piece.type][piece.r, r]
-
-        for x, y in kicks:
-            if not _overlaps(
-                self.engine,
-                dataclasses.replace(piece, x=piece.x + x, y=piece.y + y, r=r),
-                self.board,
-            ):
-                piece.x += x
-                piece.y += y
-                piece.r = r
-
-                self.delta.x = x
-                self.delta.y = y
-                self.delta.r = turns
-                break
+        x = piece.x
+        y = piece.y
+        r = piece.r
+        self.rs.rotate(piece, piece.r, (piece.r + turns) % 4)
+        self.delta.x = x - self.piece.x
+        self.delta.y = y - self.piece.y
+        self.delta.r = r - self.piece.r
 
     def push(self, move: Move) -> None:
         if self.status != PlayingStatus.playing:

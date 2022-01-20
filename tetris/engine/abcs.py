@@ -6,23 +6,51 @@ from collections.abc import Iterator
 from collections.abc import Sequence
 from typing import Optional, overload
 
-from tetris.types import KickTable
+from tetris.types import Board
 from tetris.types import Minos
 from tetris.types import MoveDelta
+from tetris.types import Piece
 from tetris.types import PieceType
 from tetris.types import Seed
 
 
 class RotationSystem(abc.ABC):
-    @property
+    def __init__(self, board: Board):
+        self.board = board
+
     @abc.abstractmethod
-    def shapes(self) -> dict[PieceType, list[Minos]]:
+    def spawn(self, piece: PieceType) -> Piece:
         ...
 
-    @property
     @abc.abstractmethod
-    def kicks(self) -> KickTable:
+    def rotate(self, piece: Piece, from_r: int, to_r: int):
         ...
+
+    @overload
+    def overlaps(self, piece: Piece) -> bool:
+        ...
+
+    @overload
+    def overlaps(self, piece: None, minos: Minos, px: int, py: int) -> bool:
+        ...
+
+    def overlaps(self, piece=None, minos=None, px=None, py=None) -> bool:
+        if piece is not None:
+            minos = piece.minos
+            px = piece.x
+            py = piece.y
+
+        for x, y in minos:
+            if x + px not in range(self.board.shape[0]):
+                return True
+
+            if y + py not in range(self.board.shape[1]):
+                return True
+
+            if self.board[x + px, y + py] != 0:
+                return True
+
+        return False
 
 
 class Queue(abc.ABC, Sequence):

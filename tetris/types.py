@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import enum
+from collections.abc import Iterable
 from typing import final, Optional, TYPE_CHECKING, Union
 
 import numpy as np
@@ -15,21 +16,19 @@ PieceType = enum.IntEnum("PieceType", "I L J S Z T O")
 MoveKind = enum.Enum("MoveKind", "drag rotate soft_drop hard_drop swap")
 PlayingStatus = enum.Enum("PlayingStatus", "playing idle stopped")
 Board = NDArray[np.int8]
-KickTable = dict[PieceType, dict[tuple[int, int], tuple[tuple[int, int], ...]]]
-Minos = tuple[tuple[int, int], ...]
+Minos = Iterable[tuple[int, int]]
 Seed = Union[str, bytes, int]
 
 
 @dataclasses.dataclass
 class Piece:
-    __slots__ = ("type", "x", "y", "r")
+    __slots__ = ("type", "x", "y", "r", "minos")
 
     type: PieceType
-    x: int  # = max_x // 2 - 2
-    y: int  # = (max_y + 3) // 2 - 3
-    r: int  # = 0
-
-    # TODO: figure out where should the defaults above be
+    x: int
+    y: int
+    r: int
+    minos: Minos
 
 
 class PartialMove:
