@@ -31,10 +31,11 @@ class BaseGame:
 
     def reset(self) -> None:
         self.seed = secrets.token_bytes()
+        self.board = np.zeros((40, 10), dtype=np.int8)
         self.queue = self.engine.queue(seed=self.seed)
+        self.rs = self.engine.rs(self.board)
         self.scorer = self.engine.scorer()
         self.score = 0
-        self.board = np.zeros((40, 10), dtype=np.int8)
         self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing
         self.delta = None
