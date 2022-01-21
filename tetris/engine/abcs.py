@@ -31,7 +31,7 @@ class RotationSystem(abc.ABC):
         ...
 
     @overload
-    def overlaps(self, piece: None, minos: Minos, px: int, py: int) -> bool:
+    def overlaps(self, minos: Minos, px: int, py: int) -> bool:
         ...
 
     def overlaps(self, piece=None, minos=None, px=None, py=None) -> bool:
