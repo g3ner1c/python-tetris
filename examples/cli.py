@@ -1,4 +1,5 @@
 import curses
+import time
 
 import tetris
 from tetris import Move
@@ -52,6 +53,7 @@ def main(screen: curses.window) -> None:
     }
 
     curses.curs_set(0)
+    screen.nodelay(True)
     board = screen.subwin(22, 22, 3, 5)
     status = screen.subwin(22, 20, 3, 28)
 
@@ -110,6 +112,7 @@ def main(screen: curses.window) -> None:
     try:
         while True:
             render()
+            game.tick()
             ch = screen.getch()
             if ch == ord("q"):
                 break
@@ -122,6 +125,8 @@ def main(screen: curses.window) -> None:
 
             elif ch in moves:
                 game.push(moves[ch])
+
+            time.sleep(1 / 120)
 
     except KeyboardInterrupt:
         pass

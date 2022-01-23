@@ -10,6 +10,7 @@ from tetris.engine import Engine
 from tetris.types import Move
 from tetris.types import MoveDelta
 from tetris.types import MoveKind
+from tetris.types import PartialMove
 from tetris.types import PieceType
 from tetris.types import PlayingStatus
 
@@ -19,6 +20,7 @@ class BaseGame:
         self.engine = engine
         self.seed = secrets.token_bytes()
         self.board = np.zeros((40, 10), dtype=np.int8)
+        self.gravity = engine.gravity(self)
         self.queue = engine.queue(seed=self.seed)
         self.rs = engine.rs(self.board)
         self.scorer = engine.scorer()
@@ -39,6 +41,7 @@ class BaseGame:
     def reset(self) -> None:
         self.seed = secrets.token_bytes()
         self.board = np.zeros((40, 10), dtype=np.int8)
+        self.gravity = self.engine.gravity(self)
         self.queue = self.engine.queue(seed=self.seed)
         self.rs = self.engine.rs(self.board)
         self.scorer = self.engine.scorer()
@@ -170,11 +173,13 @@ class BaseGame:
         self.delta.y = y - self.piece.y
         self.delta.r = r - self.piece.r
 
-    def push(self, move: Move) -> None:
+    def push(self, move: PartialMove) -> None:
         if self.status != PlayingStatus.playing:
             return
 
-        self.delta = MoveDelta(kind=move.kind, game=self, x=move.x, y=move.y, r=move.r)
+        self.delta = MoveDelta(
+            kind=move.kind, game=self, x=move.x, y=move.y, r=move.r, auto=move.auto
+        )
 
         if move.kind == MoveKind.drag:
             self._move_relative(y=move.y)
@@ -192,6 +197,11 @@ class BaseGame:
             self._lock_piece()
 
         self.scorer.judge(self.delta)
+        if not move.auto:
+            self.gravity.calculate(self.delta)
+
+    def tick(self):
+        self.gravity.calculate()
 
     def drag(self, tiles: int):
         self.push(Move.drag(tiles))

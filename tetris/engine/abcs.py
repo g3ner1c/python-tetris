@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import abc
 import random
 import secrets
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import Optional, overload
+from typing import Optional, overload, TYPE_CHECKING
 
 from tetris.types import Board
 from tetris.types import Minos
@@ -12,6 +14,9 @@ from tetris.types import MoveDelta
 from tetris.types import Piece
 from tetris.types import PieceType
 from tetris.types import Seed
+
+if TYPE_CHECKING:
+    from tetris import BaseGame
 
 
 class RotationSystem(abc.ABC):
@@ -110,6 +115,22 @@ class Queue(abc.ABC, Sequence):
 
 
 class Scorer(abc.ABC):
+    score: int
+    level: int
+
+    def __init__(self):
+        self.score = 0
+        self.level = 1
+
     @abc.abstractmethod
-    def judge(self, delta: MoveDelta) -> int:
+    def judge(self, delta: MoveDelta):
+        ...
+
+
+class Gravity(abc.ABC):
+    def __init__(self, game: BaseGame):
+        self.game = game
+
+    @abc.abstractmethod
+    def calculate(self, delta: Optional[MoveDelta] = None):
         ...
