@@ -22,12 +22,19 @@ class BaseGame:
         self.queue = engine.queue(seed=self.seed)
         self.rs = engine.rs(self.board)
         self.scorer = engine.scorer()
-        self.score = 0
         self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing
         self.delta: Optional[MoveDelta] = None
         self.hold: Optional[PieceType] = None
         self.hold_lock = False
+
+    @property
+    def score(self) -> int:
+        return self.scorer.score
+
+    @property
+    def level(self) -> int:
+        return self.scorer.level
 
     def reset(self) -> None:
         self.seed = secrets.token_bytes()
@@ -35,7 +42,6 @@ class BaseGame:
         self.queue = self.engine.queue(seed=self.seed)
         self.rs = self.engine.rs(self.board)
         self.scorer = self.engine.scorer()
-        self.score = 0
         self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing
         self.delta = None
@@ -185,7 +191,7 @@ class BaseGame:
         elif move.kind == MoveKind.hard_drop:
             self._lock_piece()
 
-        self.score += self.scorer.judge(self.delta)
+        self.scorer.judge(self.delta)
 
     def drag(self, tiles: int):
         self.push(Move.drag(tiles))

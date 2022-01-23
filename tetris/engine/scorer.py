@@ -6,18 +6,19 @@ from tetris.types import PieceType
 
 class GuidelineScorer(Scorer):
     def __init__(self):  # type: ignore[no-untyped-def]
+        self.score = 0
         self.level = 1
         self.combo = 0
         self.back_to_back = 0
 
-    def judge(self, delta: MoveDelta) -> int:
-        score = 0
-
+    def judge(self, delta: MoveDelta):
         if delta.kind == MoveKind.soft_drop:
             if not delta.auto:
-                score += delta.x * self.level
+                self.score += delta.x * self.level
 
         elif delta.kind == MoveKind.hard_drop:
+            score = 0
+
             if not delta.auto:
                 score += delta.x * self.level * 2
 
@@ -88,17 +89,15 @@ class GuidelineScorer(Scorer):
                 if perfect_clear:
                     score += 200 * self.level
 
-        return score
+            self.score += score
 
 
 class NoScorer(Scorer):
     def judge(self, delta: MoveDelta) -> int:
-        return 0
+        pass
 
 
 class BPSScorer(Scorer):
-    def judge(self, delta: MoveDelta) -> int:
+    def judge(self, delta: MoveDelta):
         if delta.kind == MoveKind.hard_drop:
-            return [0, 40, 100, 300, 1200][len(delta.clears)]
-
-        return 0
+            self.score += [0, 40, 100, 300, 1200][len(delta.clears)]
