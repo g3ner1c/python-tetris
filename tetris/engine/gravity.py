@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from numbers import Number
 from typing import Final, Optional, TYPE_CHECKING
 
 from tetris.engine.abcs import Gravity
@@ -14,26 +15,68 @@ if TYPE_CHECKING:
 SECOND: Final[int] = 1_000_000_000  # in nanoseconds
 
 
-class MarathonGravity(Gravity):
+class Timer:
+    __slots__ = ("duration", "running", "started")
+
+    def __init__(
+        self,
+        *,
+        seconds: Number = 0,
+        milliseconds: Number = 0,
+        microseconds: Number = 0,
+        nanoseconds: Number = 0,
+    ):
+        self.duration = int(
+            seconds * 1e9 + milliseconds * 1e6 + microseconds * 1e3 + nanoseconds
+        )
+        self.started = 0
+        self.running = False
+
+    def start(self):
+        self.started = time.monotonic_ns()
+        self.running = True
+
+    def stop(self):
+        self.started = 0
+        self.running = False
+
+    @property
+    def done(self) -> bool:
+        return self.running and self.started + self.duration <= time.monotonic_ns()
+
+
+class InfinityGravity(Gravity):
     def __init__(self, game: BaseGame):
         self.game = game
 
-        now = time.monotonic_ns()
-        self.last_input = now
-        self.last_drop = now
-        self.last_hdrop = now + 1
+        self.idle_lock = Timer(milliseconds=500)
+        self.lock_resets = 0
+        self.last_drop = time.monotonic_ns()
 
     def calculate(self, delta: Optional[MoveDelta] = None):
         level = self.game.level
+        piece = self.game.piece
         drop_delay = (0.8 - ((level - 1) * 0.007)) ** (level - 1) * SECOND
         now = time.monotonic_ns()
 
-        if delta is not None and delta.kind == MoveKind.hard_drop:
-            self.last_hdrop = now
+        if delta is not None:
+            if delta.kind == MoveKind.hard_drop:
+                self.idle_lock.stop()
+                self.lock_resets = 0
 
-        if now - self.last_hdrop >= 30 * SECOND:
+            if self.idle_lock.running and (delta.x or delta.y or delta.r):
+                self.idle_lock.start()
+                self.lock_resets += 1
+
+            if not self.idle_lock.running and self.game.rs.overlaps(
+                minos=piece.minos, px=piece.x + 1, py=piece.y
+            ):
+                self.idle_lock.start()
+
+        if self.idle_lock.done or self.lock_resets >= 15:
             self.game.push(Move(kind=MoveKind.hard_drop, auto=True))
-            self.last_hdrop = now
+            self.idle_lock.stop()
+            self.lock_resets = 0
 
         since_drop = now - self.last_drop
         if since_drop >= drop_delay:
@@ -41,3 +84,7 @@ class MarathonGravity(Gravity):
                 Move(kind=MoveKind.soft_drop, x=int(since_drop / drop_delay), auto=True)
             )
             self.last_drop = now
+            if not self.idle_lock.running and self.game.rs.overlaps(
+                minos=piece.minos, px=piece.x + 1, py=piece.y
+            ):
+                self.idle_lock.start()

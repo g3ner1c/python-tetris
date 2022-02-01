@@ -4,7 +4,7 @@ from tetris.engine.abcs import Gravity
 from tetris.engine.abcs import Queue
 from tetris.engine.abcs import RotationSystem
 from tetris.engine.abcs import Scorer
-from tetris.engine.gravity import MarathonGravity
+from tetris.engine.gravity import InfinityGravity
 from tetris.engine.queue import SevenBag
 from tetris.engine.rotation import SRS
 from tetris.engine.scorer import GuidelineScorer
@@ -19,5 +19,8 @@ class Engine:
 
 
 DefaultEngine = Engine(
-    gravity=MarathonGravity, queue=SevenBag, rs=SRS, scorer=GuidelineScorer
+    gravity=InfinityGravity,
+    queue=SevenBag,
+    rs=SRS,
+    scorer=GuidelineScorer,
 )
