@@ -87,9 +87,19 @@ def main(screen: curses.window) -> None:
         status.addstr(7, 2, " Score ", curses.A_STANDOUT)
         status.addstr(8, 4, format(game.score, ","))
 
+        line_clears = game.scorer.line_clears
+        status.addstr(10, 2, " Level ", curses.A_STANDOUT)
+        status.addstr(11, 4, f"{game.level}")
+        status.addstr(
+            11,
+            5 + len(str(game.level)),
+            f"[{line_clears}/{(line_clears // 10 + 1) * 10}]",
+            curses.A_DIM,
+        )
+
         elapsed = time.monotonic() - game_start
-        status.addstr(10, 2, " Elapsed ", curses.A_STANDOUT)
-        status.addstr(11, 4, f"{int(elapsed / 60)}:{elapsed % 60:0>6.3f}")
+        status.addstr(14, 2, " Elapsed ", curses.A_STANDOUT)
+        status.addstr(15, 4, f"{int(elapsed / 60)}:{elapsed % 60:0>6.3f}")
 
         status.addstr(20, 2, "[h]elp for info", curses.A_DIM)
 
