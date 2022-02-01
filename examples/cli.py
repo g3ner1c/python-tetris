@@ -4,21 +4,22 @@ import time
 import tetris
 from tetris import Move
 
-game = tetris.BaseGame()
-
-moves: dict[int, Move] = {
-    ord("z"): Move.rotate(-1),
-    curses.KEY_UP: Move.rotate(+1),
-    curses.KEY_LEFT: Move.left(),
-    curses.KEY_RIGHT: Move.right(),
-    curses.KEY_DOWN: Move.soft_drop(),
-    ord(" "): Move.hard_drop(),
-    ord("c"): Move.swap(),
-}
-
 
 @curses.wrapper
 def main(screen: curses.window) -> None:
+    game_start = time.monotonic()
+    game = tetris.BaseGame()
+
+    moves: dict[int, Move] = {
+        ord("z"): Move.rotate(-1),
+        curses.KEY_UP: Move.rotate(+1),
+        curses.KEY_LEFT: Move.left(),
+        curses.KEY_RIGHT: Move.right(),
+        curses.KEY_DOWN: Move.soft_drop(),
+        ord(" "): Move.hard_drop(),
+        ord("c"): Move.swap(),
+    }
+
     curses.use_default_colors()
 
     for i in range(8):
@@ -72,7 +73,9 @@ def main(screen: curses.window) -> None:
 
         status.addstr(1, 2, " Queue ", curses.A_STANDOUT)
         for i, piece in enumerate(game.queue[:4]):
-            status.addstr(2, 4 + i * 3, piece.name + ",", colors[piece.name])
+            status.addstr(2, 4 + i * 3, piece.name, colors[piece.name])
+            if i < 3:
+                status.addstr(2, 5 + i * 3, ",", curses.A_DIM)
 
         status.addstr(4, 2, " Hold ", curses.A_STANDOUT)
         if game.hold is not None:
@@ -81,33 +84,44 @@ def main(screen: curses.window) -> None:
         else:
             status.addstr(5, 4, ". . .", curses.A_DIM)
 
+        status.addstr(7, 2, " Score ", curses.A_STANDOUT)
+        status.addstr(8, 4, format(game.score, ","))
+
+        elapsed = time.monotonic() - game_start
+        status.addstr(10, 2, " Elapsed ", curses.A_STANDOUT)
+        status.addstr(11, 4, f"{int(elapsed / 60)}:{elapsed % 60:0>6.3f}")
+
+        status.addstr(20, 2, "[h]elp for info", curses.A_DIM)
+
         if game.lost:
             board.addstr(11, 2, "    Game over!    ", curses.A_REVERSE | red)
 
         if game.paused:
             board.addstr(11, 2, "      Paused      ", curses.A_REVERSE | yellow)
 
-        status.addstr(7, 2, " Score ", curses.A_STANDOUT)
-        status.addstr(8, 2, format(game.score, ","))
-
-        status.addstr(11, 2, "    Controls    ", curses.A_STANDOUT)
-        status.addstr(
-            13,
-            0,
-            (
-                "  rotate:   z / up  "
-                "  move: l/r arrows  "
-                "  soft drop:  down  "
-                "  hard drop: space  "
-                "  swap piece:    c  "
-                "  pause:         p  "
-                "  restart:       r  "
-                "  quit: Ctrl-C / q  "
-            ),
-        )
-
         board.border()
         status.border()
+
+    def render_help() -> None:
+        help_menu = screen.subwin(16, 33, 6, 10)
+        help_menu.clear()
+        help_menu.addstr(2, 5, "♥ dzshn/python-tetris")
+        help_menu.addstr(4, 4, " Controls ", curses.A_STANDOUT)
+        for i, line in enumerate(
+            [
+                "rotate          z / ↑",
+                "move            ← / →",
+                "soft drop           ↓",
+                "hard drop           ␣",
+                "swap piece          c",
+                "pause               p",
+                "restart             r",
+                "quit       Ctrl-C / q",
+            ]
+        ):
+            help_menu.addstr(i + 6, 6, line)
+
+        help_menu.border()
 
     try:
         while True:
@@ -122,6 +136,16 @@ def main(screen: curses.window) -> None:
 
             elif ch == ord("r"):
                 game.reset()
+                game_start = time.monotonic()
+
+            elif ch == ord("h"):
+                paused = game.paused
+                game.pause(state=True)
+                screen.nodelay(False)
+                render_help()
+                screen.getch()
+                screen.nodelay(True)
+                game.pause(state=paused)
 
             elif ch in moves:
                 game.push(moves[ch])
