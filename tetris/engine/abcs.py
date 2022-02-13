@@ -28,7 +28,7 @@ class RotationSystem(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def rotate(self, piece: Piece, from_r: int, to_r: int):
+    def rotate(self, piece: Piece, from_r: int, to_r: int) -> None:
         ...
 
     @overload
@@ -39,7 +39,7 @@ class RotationSystem(abc.ABC):
     def overlaps(self, minos: Minos, px: int, py: int) -> bool:
         ...
 
-    def overlaps(self, piece=None, minos=None, px=None, py=None) -> bool:
+    def overlaps(self, piece=None, minos=None, px=None, py=None):
         if piece is not None:
             minos = piece.minos
             px = piece.x
@@ -89,9 +89,6 @@ class Queue(abc.ABC, Sequence):
             if i >= 7:
                 break
 
-    def __contains__(self, x) -> bool:
-        return x in self._pieces[:7]
-
     @overload
     def __getitem__(self, i: int) -> PieceType:
         ...
@@ -101,11 +98,7 @@ class Queue(abc.ABC, Sequence):
         ...
 
     def __getitem__(self, i):
-        if isinstance(i, int):
-            return self._pieces[:7][i]
-
-        elif isinstance(i, slice):
-            return self._pieces[:7][i]
+        return self._pieces[:7][i]
 
     def __len__(self) -> int:
         return 7
@@ -118,12 +111,12 @@ class Scorer(abc.ABC):
     score: int
     level: int
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.score = 0
         self.level = 1
 
     @abc.abstractmethod
-    def judge(self, delta: MoveDelta):
+    def judge(self, delta: MoveDelta) -> None:
         ...
 
 
@@ -132,5 +125,5 @@ class Gravity(abc.ABC):
         self.game = game
 
     @abc.abstractmethod
-    def calculate(self, delta: Optional[MoveDelta] = None):
+    def calculate(self, delta: Optional[MoveDelta] = None) -> None:
         ...

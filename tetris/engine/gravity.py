@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import time
-from numbers import Number
 from typing import Final, Optional, TYPE_CHECKING
 
 from tetris.engine.abcs import Gravity
@@ -21,10 +20,10 @@ class Timer:
     def __init__(
         self,
         *,
-        seconds: Number = 0,
-        milliseconds: Number = 0,
-        microseconds: Number = 0,
-        nanoseconds: Number = 0,
+        seconds: float = 0,
+        milliseconds: float = 0,
+        microseconds: float = 0,
+        nanoseconds: float = 0,
     ):
         self.duration = int(
             seconds * 1e9 + milliseconds * 1e6 + microseconds * 1e3 + nanoseconds
@@ -32,11 +31,11 @@ class Timer:
         self.started = 0
         self.running = False
 
-    def start(self):
+    def start(self) -> None:
         self.started = time.monotonic_ns()
         self.running = True
 
-    def stop(self):
+    def stop(self) -> None:
         self.started = 0
         self.running = False
 
@@ -53,7 +52,7 @@ class InfinityGravity(Gravity):
         self.lock_resets = 0
         self.last_drop = time.monotonic_ns()
 
-    def calculate(self, delta: Optional[MoveDelta] = None):
+    def calculate(self, delta: Optional[MoveDelta] = None) -> None:
         level = self.game.level
         piece = self.game.piece
         drop_delay = (0.8 - ((level - 1) * 0.007)) ** (level - 1) * SECOND

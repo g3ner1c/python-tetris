@@ -12,10 +12,10 @@ class GuidelineScorer(Scorer):
         self.back_to_back = 0
 
     @property
-    def level(self):
+    def level(self) -> int:
         return self.line_clears // 10 + 1
 
-    def judge(self, delta: MoveDelta):
+    def judge(self, delta: MoveDelta) -> None:
         if delta.kind == MoveKind.soft_drop:
             if not delta.auto:
                 self.score += delta.x * self.level
@@ -98,11 +98,11 @@ class GuidelineScorer(Scorer):
 
 
 class NoScorer(Scorer):
-    def judge(self, delta: MoveDelta) -> int:
+    def judge(self, delta: MoveDelta) -> None:
         pass
 
 
 class BPSScorer(Scorer):
-    def judge(self, delta: MoveDelta):
+    def judge(self, delta: MoveDelta) -> None:
         if delta.kind == MoveKind.hard_drop:
             self.score += [0, 40, 100, 300, 1200][len(delta.clears)]

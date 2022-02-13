@@ -200,22 +200,22 @@ class BaseGame:
         if not move.auto:
             self.gravity.calculate(self.delta)
 
-    def tick(self):
+    def tick(self) -> None:
         self.gravity.calculate()
 
-    def drag(self, tiles: int):
+    def drag(self, tiles: int) -> None:
         self.push(Move.drag(tiles))
 
-    def rotate(self, turns: int = 1):
+    def rotate(self, turns: int = 1) -> None:
         self.push(Move.rotate(turns))
 
-    def soft_drop(self, tiles: int):
+    def soft_drop(self, tiles: int) -> None:
         self.push(Move.soft_drop(tiles))
 
-    def hard_drop(self):
+    def hard_drop(self) -> None:
         self.push(Move.hard_drop())
 
-    def swap(self):
+    def swap(self) -> None:
         self.push(Move.swap())
 
     def __str__(self) -> str:

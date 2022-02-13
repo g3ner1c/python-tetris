@@ -1,10 +1,15 @@
+from typing import ClassVar
+
 from tetris.engine.abcs import RotationSystem
+from tetris.types import Minos
 from tetris.types import Piece
 from tetris.types import PieceType
 
+KickTable = dict[tuple[int, int], tuple[tuple[int, int], ...]]  # pardon
+
 
 class SRS(RotationSystem):
-    shapes = {
+    shapes: ClassVar[dict[PieceType, list[Minos]]] = {
         PieceType.I: [
             ((1, 0), (1, 1), (1, 2), (1, 3)),
             ((0, 2), (1, 2), (2, 2), (3, 2)),
@@ -49,7 +54,7 @@ class SRS(RotationSystem):
         ],
     }
 
-    kicks = {
+    kicks: ClassVar[KickTable] = {
         (0, 1): ((+0, -1), (-1, -1), (+2, +0), (+2, -1)),
         (0, 3): ((+0, +1), (-1, +1), (+2, +0), (+2, +1)),
         (1, 0): ((+0, +1), (+1, +1), (-2, +0), (-2, +1)),
@@ -60,7 +65,7 @@ class SRS(RotationSystem):
         (3, 2): ((+0, -1), (+1, -1), (-2, +0), (-2, -1)),
     }
 
-    i_kicks = {
+    i_kicks: ClassVar[KickTable] = {
         (0, 1): ((+0, -1), (+0, +1), (+1, -2), (-2, +1)),
         (0, 3): ((+0, -1), (+0, +2), (-2, -1), (+1, +2)),
         (1, 0): ((+0, +2), (+0, -1), (-1, +2), (+2, -1)),
@@ -84,7 +89,7 @@ class SRS(RotationSystem):
             minos=self.shapes[piece][0],
         )
 
-    def rotate(self, piece: Piece, from_r: int, to_r: int):
+    def rotate(self, piece: Piece, from_r: int, to_r: int) -> None:
         minos = self.shapes[piece.type][to_r]
 
         if not self.overlaps(minos=minos, px=piece.x, py=piece.y):
@@ -92,7 +97,7 @@ class SRS(RotationSystem):
 
         elif (from_r, to_r) in self.kicks:
             if piece.type == PieceType.I:
-                table = self.kicks | self.i_kicks
+                table = self.i_kicks
 
             else:
                 table = self.kicks
@@ -109,18 +114,19 @@ class SRS(RotationSystem):
         piece.minos = self.shapes[piece.type][piece.r]
 
 
-class TetrioSRS(SRS):
-    _override = {
-        (0, 2): ((-1, +0), (-1, +1), (-1, -1), (+0, +1), (+0, -1)),
-        (1, 3): ((+0, +1), (-2, +1), (-1, +1), (-2, +0), (-1, +0)),
-        (2, 0): ((+1, +0), (+1, -1), (+1, +1), (+0, -1), (+0, +1)),
-        (3, 1): ((+0, -1), (-2, -1), (-1, -1), (-2, +0), (-1, +0)),
-    }
+_Tetrio_override = {
+    (0, 2): ((-1, +0), (-1, +1), (-1, -1), (+0, +1), (+0, -1)),
+    (1, 3): ((+0, +1), (-2, +1), (-1, +1), (-2, +0), (-1, +0)),
+    (2, 0): ((+1, +0), (+1, -1), (+1, +1), (+0, -1), (+0, +1)),
+    (3, 1): ((+0, -1), (-2, -1), (-1, -1), (-2, +0), (-1, +0)),
+}
 
-    kicks = SRS.kicks | _override
-    i_kicks = SRS.i_kicks | _override
+
+class TetrioSRS(SRS):
+    kicks: ClassVar[KickTable] = SRS.kicks | _Tetrio_override
+    i_kicks: ClassVar[KickTable] = SRS.i_kicks | _Tetrio_override
 
 
 class NoKicks(SRS):
-    kicks = {}
-    i_kicks = {}
+    kicks: ClassVar[KickTable] = {}
+    i_kicks: ClassVar[KickTable] = {}

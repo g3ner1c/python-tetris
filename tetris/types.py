@@ -80,7 +80,7 @@ class MoveDelta(PartialMove):
 @final
 class Move(PartialMove):
     @classmethod
-    def drag(cls, tiles: int):
+    def drag(cls, tiles: int) -> Move:
         return cls(MoveKind.drag, y=tiles)
 
     @classmethod

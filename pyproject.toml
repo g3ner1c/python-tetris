@@ -28,12 +28,16 @@ tox = "^3.24.4"
 [tool.black]
 
 [tool.mypy]
-check_untyped_defs = true
 files = [
     "examples/*.py",
     "tetris/*.py"
 ]
 python_version = "3.9"
+# disallow_untyped_defs = true  # funky with overloads
+check_untyped_defs = true
+disallow_incomplete_defs = true
+no_implicit_optional = true
+warn_unreachable = true
 warn_redundant_casts = true
 warn_unused_configs = true
 
