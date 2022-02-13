@@ -85,9 +85,9 @@ class Queue(abc.ABC, Sequence):
 
     def __iter__(self) -> Iterator[PieceType]:
         for i, j in enumerate(self._pieces):
-            yield j
             if i >= 7:
                 break
+            yield j
 
     @overload
     def __getitem__(self, i: int) -> PieceType:
