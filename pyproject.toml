@@ -1,14 +1,15 @@
 [tool.poetry]
 name = "tetris"
-version = "0.3.0"
-description = "Guideline-compliant Tetris engine"
+version = "0.4.0"
+description = "Simple and modular tetris library"
 authors = ["Sofia \"dzshn\" N. L. <zshn@pm.me>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/dzshn/python-tetris"
 repository = "https://github.com/dzshn/python-tetris"
+keywords = ["tetris", "stacker"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
@@ -16,6 +17,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed"
 ]
+include = ["examples/"]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.11"
