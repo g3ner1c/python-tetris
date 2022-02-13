@@ -12,12 +12,21 @@ if TYPE_CHECKING:
     from tetris import BaseGame
 
 
-PieceType = enum.IntEnum("PieceType", "I L J S Z T O")
 MoveKind = enum.Enum("MoveKind", "drag rotate soft_drop hard_drop swap")
 PlayingStatus = enum.Enum("PlayingStatus", "playing idle stopped")
 Board = NDArray[np.int8]
 Minos = Iterable[tuple[int, int]]
 Seed = Union[str, bytes, int]
+
+
+class PieceType(enum.IntEnum):
+    I = enum.auto()  # noqa
+    J = enum.auto()
+    L = enum.auto()
+    O = enum.auto()  # noqa
+    S = enum.auto()
+    T = enum.auto()
+    Z = enum.auto()
 
 
 @dataclasses.dataclass

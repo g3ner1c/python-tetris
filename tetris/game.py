@@ -14,6 +14,19 @@ from tetris.types import PartialMove
 from tetris.types import PieceType
 from tetris.types import PlayingStatus
 
+_default_tiles = {
+    0: " ",
+    PieceType.I: "I",
+    PieceType.J: "J",
+    PieceType.L: "L",
+    PieceType.O: "O",
+    PieceType.S: "S",
+    PieceType.T: "T",
+    PieceType.Z: "Z",
+    8: "@",
+    9: "X",
+}
+
 
 class BaseGame:
     def __init__(self, engine: Engine = DefaultEngine):
@@ -108,7 +121,7 @@ class BaseGame:
 
         self.hold_lock = False
 
-    def render(self, tiles: list[str] = list(" ILJSZTO@X"), lines: int = 20) -> str:
+    def render(self, tiles: dict[int, str] = _default_tiles, lines: int = 20) -> str:
         board = self.board.copy()
         piece = self.piece
         ghost_x = piece.x
@@ -219,7 +232,7 @@ class BaseGame:
         self.push(Move.swap())
 
     def __str__(self) -> str:
-        return self.render(tiles=[i + " " for i in " ILJSZTO@X"])
+        return self.render(tiles={k: v + " " for k, v in _default_tiles.items()})
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(engine={self.engine})"
