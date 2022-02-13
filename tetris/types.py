@@ -28,6 +28,9 @@ class PieceType(enum.IntEnum):
     T = enum.auto()
     Z = enum.auto()
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}.{self.name}"
+
 
 @dataclasses.dataclass
 class Piece:

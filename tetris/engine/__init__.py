@@ -17,6 +17,13 @@ class Engine:
     rs: type[RotationSystem]
     scorer: type[Scorer]
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"{', '.join(f'{k}={v.__name__}' for k, v in vars(self).items())}"
+            ")"
+        )
+
 
 DefaultEngine = Engine(
     gravity=InfinityGravity,
