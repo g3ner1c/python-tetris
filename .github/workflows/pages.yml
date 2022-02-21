@@ -7,7 +7,6 @@ on:
 jobs:
     pages:
         runs-on: ubuntu-latest
-        environment: packaging
         steps:
             - uses: actions/checkout@v2
 
