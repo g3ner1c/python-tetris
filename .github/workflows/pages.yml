@@ -31,4 +31,4 @@ jobs:
                   path: docs/build
 
             - name: Publish pages
-              uses: actions/deploy-pages
+              uses: actions/deploy-pages@latest
