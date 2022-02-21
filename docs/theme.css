@@ -1,0 +1,20 @@
+/* Colour palette is Atom One Dark */
+
+:root {
+    --pdoc-background: hsl(220, 13%, 18%);
+}
+
+.pdoc {
+    --accent: hsl(220, 23%, 15%);
+    --accent2: hsl(220, 9%, 55%);
+    --active: #fff598;
+    --annotation: var(--muted);
+    --code: hsl(220, 23%, 15%);
+    --def: hsl(286, 60%, 67%);
+    --link-hover: hsl(207, 82%, 56%);
+    --link: hsl(207, 82%, 66%);
+    --muted: hsl(220, 9%, 55%);
+    --name: hsl(39, 67%, 69%);
+    --nav-hover: hsla(220, 10%, 40%, 0.5);
+    --text: hsl(220, 14%, 71%);
+}

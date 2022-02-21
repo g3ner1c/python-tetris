@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="pdoc {{ __version__ }}"/>
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:creator" content="@dzshn_">
+    <meta name="twitter:title" content="python-tetris documentation">
+    <meta name="og:title" content="python-tetris documentation">
+    <meta name="og:description" content="python-tetris is a simple and modular tetris library">
+    <meta name="author" content="@dzshn">
+    <meta name="description" content="python-tetris is a simple and modular tetris library">
+    <meta name="theme-color" content="#fa50a0">
+    <link rel="icon" href="/favicon.ico"/>
+    <title>{% block title %}{% endblock %}</title>
+    {% block head %}{% endblock %}
+    {% filter minify_css | indent %}
+        <style>{% include "resources/bootstrap-reboot.min.css" %}</style>
+        <style>/*! syntax-highlighting.css */{% include "syntax-highlighting.css" %}</style>
+        <style>/*! theme.css */{% include "theme.css" %}</style>
+        <style>/*! layout.css */{% include "layout.css" %}</style>
+        <style>/*! content.css */{% include "content.css" %}</style>
+        <style>/*! custom.css */{% include "custom.css" %}</style>
+    {% endfilter %}
+    {% if math %}{% include "math.html.jinja2" %}{% endif %}
+</head>
+<body>
+{% block body %}
+    <nav class="pdoc">
+        {% block nav %}{% endblock %}
+    </nav>
+    {% block content %}{% endblock %}
+{% endblock body %}
+</body>
+</html>

@@ -1,0 +1,28 @@
+nav.pdoc {
+    padding-top: 28px;
+    padding-bottom: 28px;
+    border: none;
+}
+
+input[role='searchbox'] {
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    background: #f0f0f0;
+}
+
+.modulename {
+    color: #d7dae0;
+}
+
+.pdoc pre {
+    border: none;
+}
+
+footer a {
+    display: initial !important;
+}
+
+footer a:hover {
+    color: var(--link) !important;
+}

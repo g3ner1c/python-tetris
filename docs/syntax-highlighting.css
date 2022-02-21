@@ -1,0 +1,66 @@
+/* Atom One Dark theme
+ * Adapted from https://github.com/mgyongyosi/OneDarkJekyll/blob/master/syntax-one-dark.css */
+.pdoc-code { background: #282c34; color: #abb2bf; }
+.pdoc-code pre { background: #282c34; }
+.pdoc-code .bp { color: #e5c07b; }
+.pdoc-code .c { color: #5c6370; font-style: italic; }
+.pdoc-code .c1 { color: #5c6370; font-style: italic; }
+.pdoc-code .cm { color: #5c6370; font-style: italic; }
+.pdoc-code .cp { color: #5c6370; font-style: italic; }
+.pdoc-code .cs { color: #5c6370; font-style: italic; }
+.pdoc-code .err { color: #960050; background-color: #1e0010; }
+.pdoc-code .gd { color: #f92672; }
+.pdoc-code .ge { font-style: italic; }
+.pdoc-code .gi { color: #a6e22e; }
+.pdoc-code .gs { font-weight: 700; }
+.pdoc-code .gu { color: #75715e; }
+.pdoc-code .hll { background: #282c34; }
+.pdoc-code .il { color: #d19a66; }
+.pdoc-code .k { color: #c678dd; }
+.pdoc-code .kc { color: #c678dd; }
+.pdoc-code .kd { color: #c678dd; }
+.pdoc-code .kn { color: #c678dd; }
+.pdoc-code .kp { color: #c678dd; }
+.pdoc-code .kr { color: #c678dd; }
+.pdoc-code .kt { color: #c678dd; }
+.pdoc-code .l { color: #98c379; }
+.pdoc-code .ld { color: #98c379; }
+.pdoc-code .m { color: #d19a66; }
+.pdoc-code .mf { color: #d19a66; }
+.pdoc-code .mh { color: #d19a66; }
+.pdoc-code .mi { color: #d19a66; }
+.pdoc-code .mo { color: #d19a66; }
+.pdoc-code .n { color: #abb2bf; }
+.pdoc-code .na { color: #d19a66; }
+.pdoc-code .nb { color: #e5c07b; }
+.pdoc-code .nc { color: #e5c07b; }
+.pdoc-code .nd { color: #e5c07b; }
+.pdoc-code .ne { color: #e5c07b; }
+.pdoc-code .nf { color: #abb2bf; }
+.pdoc-code .ni { color: #e5c07b; }
+.pdoc-code .nl { color: #e5c07b; }
+.pdoc-code .nn { color: #abb2bf; }
+.pdoc-code .no { color: #e5c07b; }
+.pdoc-code .nt { color: #e06c75; }
+.pdoc-code .nv { color: #e5c07b; }
+.pdoc-code .nx { color: #abb2bf; }
+.pdoc-code .o { color: #abb2bf; }
+.pdoc-code .ow { font-weight: 700; }
+.pdoc-code .p { color: #abb2bf; }
+.pdoc-code .py { color: #e5c07b; }
+.pdoc-code .s { color: #98c379; }
+.pdoc-code .s1 { color: #98c379; }
+.pdoc-code .s2 { color: #98c379; }
+.pdoc-code .sb { color: #98c379; }
+.pdoc-code .sc { color: #98c379; }
+.pdoc-code .sd { color: #98c379; }
+.pdoc-code .se { color: #98c379; }
+.pdoc-code .sh { color: #98c379; }
+.pdoc-code .si { color: #98c379; }
+.pdoc-code .sr { color: #56b6c2; }
+.pdoc-code .ss { color: #56b6c2; }
+.pdoc-code .sx { color: #98c379; }
+.pdoc-code .vc { color: #e5c07b; }
+.pdoc-code .vg { color: #e5c07b; }
+.pdoc-code .vi { color: #e06c75; }
+.pdoc-code .w { color: #f8f8f2; }
