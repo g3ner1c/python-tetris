@@ -3,7 +3,7 @@
 PATH_DOCS=$(realpath $(dirname $0))
 PATH_PROJ=$(realpath $PATH_DOCS/..)
 
-rm -r $PATH_DOCS/build
+rm -rf $PATH_DOCS/build
 mkdir $PATH_DOCS/build
 
 cp $PATH_DOCS/logo.png $PATH_DOCS/build
