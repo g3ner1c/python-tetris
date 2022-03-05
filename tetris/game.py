@@ -7,36 +7,57 @@ import numpy as np
 
 from tetris.engine import DefaultEngine
 from tetris.engine import Engine
+from tetris.types import Board
+from tetris.types import MinoType
 from tetris.types import Move
 from tetris.types import MoveDelta
 from tetris.types import MoveKind
 from tetris.types import PartialMove
 from tetris.types import PieceType
 from tetris.types import PlayingStatus
+from tetris.types import Seed
 
 _default_tiles = {
-    0: " ",
-    PieceType.I: "I",
-    PieceType.J: "J",
-    PieceType.L: "L",
-    PieceType.O: "O",
-    PieceType.S: "S",
-    PieceType.T: "T",
-    PieceType.Z: "Z",
-    8: "@",
-    9: "X",
+    MinoType.EMPTY: " ",
+    MinoType.I: "I",
+    MinoType.J: "J",
+    MinoType.L: "L",
+    MinoType.O: "O",
+    MinoType.S: "S",
+    MinoType.T: "T",
+    MinoType.Z: "Z",
+    MinoType.GHOST: "@",
+    MinoType.GARBAGE: "X",
 }
 
 
 class BaseGame:
-    def __init__(self, engine: Engine = DefaultEngine):
+    def __init__(
+        self,
+        engine: Engine = DefaultEngine,
+        seed: Optional[Seed] = None,
+        board: Optional[Board] = None,
+        board_size: tuple[int, int] = (20, 10),
+        level: int = 0,
+        score: int = 0,
+    ):
         self.engine = engine
         self.seed = secrets.token_bytes()
-        self.board = np.zeros((40, 10), dtype=np.int8)
+        if board is None:
+            # Internally, we use 2x the height to "buffer" the board being pushed above the view
+            self.board = np.zeros((board_size[0] * 2, board_size[1]), dtype=np.int8)
+
+        else:
+            self.board = board
+
         self.gravity = engine.gravity(self)
         self.queue = engine.queue(seed=self.seed)
         self.rs = engine.rs(self.board)
+
         self.scorer = engine.scorer()
+        self.scorer.level = level
+        self.scorer.score = score
+
         self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing
         self.delta: Optional[MoveDelta] = None
@@ -51,9 +72,17 @@ class BaseGame:
     def level(self) -> int:
         return self.scorer.level
 
+    @property
+    def height(self) -> int:
+        return self.board.shape[0] // 2
+
+    @property
+    def width(self) -> int:
+        return self.board.shape[1]
+
     def reset(self) -> None:
         self.seed = secrets.token_bytes()
-        self.board = np.zeros((40, 10), dtype=np.int8)
+        self.board[:] = 0
         self.gravity = self.engine.gravity(self)
         self.queue = self.engine.queue(seed=self.seed)
         self.rs = self.engine.rs(self.board)
@@ -101,7 +130,7 @@ class BaseGame:
 
         # If all tiles are out of view (half of the internal size), it's a lock-out
         for x, y in piece.minos:
-            if self.piece.x + x > self.board.shape[0] / 2:
+            if self.piece.x + x > self.height:
                 break
 
         else:
@@ -121,7 +150,14 @@ class BaseGame:
 
         self.hold_lock = False
 
-    def render(self, tiles: dict[int, str] = _default_tiles, lines: int = 20) -> str:
+    def render(
+        self,
+        tiles: dict[MinoType, str] = _default_tiles,
+        lines: Optional[int] = None,
+    ) -> str:
+        if lines is None:
+            lines = self.height
+
         board = self.board.copy()
         piece = self.piece
         ghost_x = piece.x

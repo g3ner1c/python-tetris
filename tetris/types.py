@@ -32,6 +32,19 @@ class PieceType(enum.IntEnum):
         return f"{self.__class__.__name__}.{self.name}"
 
 
+class MinoType(enum.IntEnum):
+    EMPTY = 0
+    I = enum.auto()  # noqa
+    J = enum.auto()
+    L = enum.auto()
+    O = enum.auto()  # noqa
+    S = enum.auto()
+    T = enum.auto()
+    Z = enum.auto()
+    GHOST = enum.auto()
+    GARBAGE = enum.auto()
+
+
 @dataclasses.dataclass
 class Piece:
     __slots__ = ("type", "x", "y", "r", "minos")

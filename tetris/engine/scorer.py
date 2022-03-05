@@ -7,13 +7,10 @@ from tetris.types import PieceType
 class GuidelineScorer(Scorer):
     def __init__(self):  # type: ignore[no-untyped-def]
         self.score = 0
+        self.level = 0
         self.line_clears = 0
         self.combo = 0
         self.back_to_back = 0
-
-    @property
-    def level(self) -> int:
-        return self.line_clears // 10 + 1
 
     def judge(self, delta: MoveDelta) -> None:
         if delta.kind == MoveKind.soft_drop:
@@ -95,6 +92,8 @@ class GuidelineScorer(Scorer):
 
             self.score += score
             self.line_clears += line_clears
+            if line_clears and self.line_clears % 10 == 0:
+                self.level += 1
 
 
 class NoScorer(Scorer):
