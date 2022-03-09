@@ -44,7 +44,8 @@ class BaseGame:
         self.engine = engine
         self.seed = secrets.token_bytes()
         if board is None:
-            # Internally, we use 2x the height to "buffer" the board being pushed above the view
+            # Internally, we use 2x the height to "buffer" the board being
+            # pushed above the view (e.g.: with garbage)
             self.board = np.zeros((board_size[0] * 2, board_size[1]), dtype=np.int8)
 
         else:
