@@ -1,3 +1,5 @@
+import importlib.metadata
+
 from tetris import engine
 from tetris import types
 from tetris.engine import DefaultEngine
@@ -12,7 +14,7 @@ from tetris.types import Piece
 from tetris.types import PieceType
 from tetris.types import PlayingStatus
 
-__version__ = "0.4.0"
+__version__ = importlib.metadata.version("tetris")
 __all__ = (
     "BaseGame",
     "DefaultEngine",
@@ -28,3 +30,5 @@ __all__ = (
     "PlayingStatus",
     "types",
 )
+
+del importlib
