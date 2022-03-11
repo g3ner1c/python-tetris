@@ -11,6 +11,6 @@ cp $PATH_DOCS/favicon.ico $PATH_DOCS/build
 
 pdoc -o $PATH_DOCS/build \
      -t $PATH_DOCS \
-     -d numpy \
+     -d google \
      --logo /logo.png \
      $PATH_PROJ/tetris

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+
 nav.pdoc {
     padding-top: 28px;
     padding-bottom: 28px;
@@ -25,4 +27,18 @@ footer a {
 
 footer a:hover {
     color: var(--link) !important;
+}
+
+.class,
+.classattr,
+nav .memberlist,
+.pdoc-code,
+.inherited dt,
+main.pdoc summary {
+    font-family: 'Fira Code', monospace;
+}
+
+.def,
+.name {
+    font-weight: 500;
 }
