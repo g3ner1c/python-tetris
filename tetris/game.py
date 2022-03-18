@@ -42,7 +42,7 @@ class BaseGame:
         score: int = 0,
     ):
         self.engine = engine
-        self.seed = secrets.token_bytes()
+        self.seed = seed or secrets.token_bytes()
         if board is None:
             # Internally, we use 2x the height to "buffer" the board being
             # pushed above the view (e.g.: with garbage)
