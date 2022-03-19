@@ -81,13 +81,14 @@ class BaseGame:
     def width(self) -> int:
         return self.board.shape[1]
 
-    def reset(self) -> None:
-        self.seed = secrets.token_bytes()
+    def reset(self, seed: Optional[Seed] = None, level: int = 0) -> None:
+        self.seed = seed or secrets.token_bytes()
         self.board[:] = 0
         self.gravity = self.engine.gravity(self)
         self.queue = self.engine.queue(seed=self.seed)
         self.rs = self.engine.rs(self.board)
         self.scorer = self.engine.scorer()
+        self.scorer.level = level
         self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing
         self.delta = None
