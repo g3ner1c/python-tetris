@@ -69,9 +69,17 @@ class BaseGame:
     def score(self) -> int:
         return self.scorer.score
 
+    @score.setter
+    def score(self, value: int) -> None:
+        self.scorer.score = value
+
     @property
     def level(self) -> int:
         return self.scorer.level
+
+    @level.setter
+    def level(self, value: int) -> None:
+        self.scorer.level = value
 
     @property
     def height(self) -> int:
