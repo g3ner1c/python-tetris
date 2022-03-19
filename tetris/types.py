@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import enum
+import sys
 from collections.abc import Iterable
 from typing import final, Optional, TYPE_CHECKING, Union
 
@@ -11,6 +12,12 @@ from numpy.typing import NDArray
 if TYPE_CHECKING:
     from tetris import BaseGame
 
+if sys.version_info > (3, 10):
+    from typing import TypeAlias
+
+    Board: TypeAlias
+    Minos: TypeAlias
+    Seed: TypeAlias
 
 Board = NDArray[np.int8]
 Minos = Iterable[tuple[int, int]]
