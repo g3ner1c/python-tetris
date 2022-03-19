@@ -89,6 +89,18 @@ class BaseGame:
     def width(self) -> int:
         return self.board.shape[1]
 
+    @property
+    def playing(self) -> bool:
+        return self.status == PlayingStatus.playing
+
+    @property
+    def paused(self) -> bool:
+        return self.status == PlayingStatus.idle
+
+    @property
+    def lost(self) -> bool:
+        return self.status == PlayingStatus.stopped
+
     def reset(self, seed: Optional[Seed] = None, level: int = 0) -> None:
         self.seed = seed or secrets.token_bytes()
         self.board[:] = 0
@@ -103,27 +115,15 @@ class BaseGame:
         self.hold = None
         self.hold_lock = False
 
-    def _lose(self) -> None:
-        self.status = PlayingStatus.stopped
-
-    @property
-    def playing(self) -> bool:
-        return self.status == PlayingStatus.playing
-
-    @property
-    def paused(self) -> bool:
-        return self.status == PlayingStatus.idle
-
-    @property
-    def lost(self) -> bool:
-        return self.status == PlayingStatus.stopped
-
     def pause(self, state: Optional[bool] = None) -> None:
         if self.status == PlayingStatus.playing and (state is None or state is True):
             self.status = PlayingStatus.idle
 
         elif self.status == PlayingStatus.idle and (state is None or state is False):
             self.status = PlayingStatus.playing
+
+    def _lose(self) -> None:
+        self.status = PlayingStatus.stopped
 
     def _lock_piece(self) -> None:
         assert self.delta
@@ -159,30 +159,6 @@ class BaseGame:
             self._lose()
 
         self.hold_lock = False
-
-    def render(
-        self,
-        tiles: dict[MinoType, str] = _default_tiles,
-        lines: Optional[int] = None,
-    ) -> str:
-        if lines is None:
-            lines = self.height
-
-        board = self.board.copy()
-        piece = self.piece
-        ghost_x = piece.x
-
-        for x in range(piece.x + 1, board.shape[0]):
-            if self.rs.overlaps(minos=piece.minos, px=x, py=piece.y):
-                break
-
-            ghost_x = x
-
-        for x, y in piece.minos:
-            board[x + ghost_x, y + piece.y] = 8
-            board[x + piece.x, y + piece.y] = piece.type
-
-        return "\n".join("".join(tiles[j] for j in i) for i in board[-lines:])
 
     def _swap(self) -> None:
         if self.hold_lock:
@@ -231,6 +207,33 @@ class BaseGame:
         self.delta.x = x - self.piece.x
         self.delta.y = y - self.piece.y
         self.delta.r = r - self.piece.r
+
+    def render(
+        self,
+        tiles: Optional[dict[MinoType, str]] = None,
+        lines: Optional[int] = None,
+    ) -> str:
+        if lines is None:
+            lines = self.height
+
+        if tiles is None:
+            tiles = _default_tiles
+
+        board = self.board.copy()
+        piece = self.piece
+        ghost_x = piece.x
+
+        for x in range(piece.x + 1, board.shape[0]):
+            if self.rs.overlaps(minos=piece.minos, px=x, py=piece.y):
+                break
+
+            ghost_x = x
+
+        for x, y in piece.minos:
+            board[x + ghost_x, y + piece.y] = 8
+            board[x + piece.x, y + piece.y] = piece.type
+
+        return "\n".join("".join(tiles[j] for j in i) for i in board[-lines:])
 
     def push(self, move: PartialMove) -> None:
         if self.status != PlayingStatus.playing:
