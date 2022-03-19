@@ -12,11 +12,29 @@ if TYPE_CHECKING:
     from tetris import BaseGame
 
 
-MoveKind = enum.Enum("MoveKind", "drag rotate soft_drop hard_drop swap")
-PlayingStatus = enum.Enum("PlayingStatus", "playing idle stopped")
 Board = NDArray[np.int8]
 Minos = Iterable[tuple[int, int]]
 Seed = Union[str, bytes, int]
+
+
+class PlayingStatus(enum.Enum):
+    stopped = enum.auto()
+    playing = enum.auto()
+    idle = enum.auto()
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}.{self.name}"
+
+
+class MoveKind(enum.Enum):
+    drag = enum.auto()
+    hard_drop = enum.auto()
+    rotate = enum.auto()
+    soft_drop = enum.auto()
+    swap = enum.auto()
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}.{self.name}"
 
 
 class PieceType(enum.IntEnum):
@@ -43,6 +61,9 @@ class MinoType(enum.IntEnum):
     Z = enum.auto()
     GHOST = enum.auto()
     GARBAGE = enum.auto()
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}.{self.name}"
 
 
 @dataclasses.dataclass
