@@ -1,6 +1,9 @@
 # python-tetris: a simple and modular tetris library
 
-[![pypi](https://img.shields.io/pypi/v/tetris?logo=pypi&logoColor=f0f0f0&style=for-the-badge)](https://pypi.org/project/tetris/) ![versions](https://img.shields.io/pypi/pyversions/tetris?logo=python&logoColor=f0f0f0&style=for-the-badge) [![build](https://img.shields.io/github/workflow/status/dzshn/python-tetris/Test%20library?logo=github&logoColor=f0f0f0&style=for-the-badge)](https://github.com/dzshn/python-tetris/actions/workflows/test.yml) [![](https://img.shields.io/badge/contains-technical%20debt-009fef?style=for-the-badge)](https://forthebadge.com/)
+[![pypi](https://img.shields.io/pypi/v/tetris?logo=pypi&logoColor=f0f0f0&style=for-the-badge)](https://pypi.org/project/tetris/)
+[![versions](https://img.shields.io/pypi/pyversions/tetris?logo=python&logoColor=f0f0f0&style=for-the-badge)](https://pypi.org/project/tetris/)
+[![build](https://img.shields.io/github/workflow/status/dzshn/python-tetris/Test%20library?logo=github&logoColor=f0f0f0&style=for-the-badge)](https://github.com/dzshn/python-tetris/actions/workflows/test.yml)
+[![technical-debt](https://img.shields.io/badge/contains-technical%20debt-009fef?style=for-the-badge)](https://forthebadge.com/)
 
 ---
 
@@ -10,16 +13,19 @@ A simple and modular library for implementing and analysing Tetris games, [guide
 
 ```py
 >>> import tetris
->>> game = tetris.BaseGame()
+>>> game = tetris.BaseGame(board_size=(4, 4), seed=128)
 >>> game.engine
 Engine(gravity=InfinityGravity, queue=SevenBag, rs=SRS, scorer=GuidelineScorer)
 >>> game.queue
-SevenBag([PieceType.J, PieceType.O, PieceType.Z, PieceType.I, PieceType.S, PieceType.T, PieceType.S])
+SevenBag([PieceType.J, PieceType.O, PieceType.L, PieceType.I, PieceType.T, PieceType.S, PieceType.J])
+>>> for _ in range(4): game.hard_drop()
+>>> game.playing
+False
 >>> print(game)
-
-
-          @
-      @ @ @
+J O O
+J J J
+Z Z
+  Z Z
 ```
 
 ## Install
@@ -28,48 +34,18 @@ This package is available on [PyPI](https://pypi.org/project/tetris/), you can i
 
 ```sh
 pip install tetris
-
+# or `py -m pip ...` etc.
 ```
 
-Or, build from source using [poetry](https://python-poetry.org/):
+To install the git version:
+
+```sh
+pip install git+https://github.com/dzshn/python-tetris
+```
+
+Or, package from source using [poetry](https://python-poetry.org/):
 
 ```sh
 poetry install
 poetry build
 ```
-
-## Quickstart
-
-_For a simple implementation, see [examples/cli.py](https://github.com/dzshn/python-tetris/blob/main/examples/cli.py)_
-
-The main API consists of `tetris.BaseGame` and `tetris.Engine`, which hold the game state and modular implementations respectively
-
-An instance of `tetris.Engine` can be reused between `tetris.BaseGame`s, and contains the subclasses of `Gravity`, `Queue`, `RotationSystem` and `Scorer` that are instantiated within `tetris.BaseGame`. The library provides a default engine (namely `tetris.DefaultEngine`), which parts work roughly akin to modern games
-
-The pseudocode for a standard implementation is the following
-
-```py
-import tetris
-from tetris import Move
-
-keymap = {
-    "a": Move.left(),   # or Move.drag(...)
-    "d": Move.right(),
-    "w": Move.hard_drop(),
-    "s": Move.soft_drop(),
-    ... # etc.
-}
-
-game = tetris.BaseGame()
-
-while True:
-    game.tick()  # Let the library update things like gravity
-
-    render()  # Output the game as you wish
-    key = get_key()  # Get current input
-
-    if key in keymap:
-        game.push(keymap[key])
-```
-
-It's only left to the developer to render and process input
