@@ -268,14 +268,21 @@ class BaseGame:
     def drag(self, tiles: int) -> None:
         self.push(Move.drag(tiles))
 
+    def left(self, tiles: int = 1) -> None:
+        self.push(Move.left(tiles))
+
+    def right(self, tiles: int = 1) -> None:
+        self.push(Move.right(tiles))
+
     def rotate(self, turns: int = 1) -> None:
         self.push(Move.rotate(turns))
 
-    def soft_drop(self, tiles: int) -> None:
-        self.push(Move.soft_drop(tiles))
 
     def hard_drop(self) -> None:
         self.push(Move.hard_drop())
+
+    def soft_drop(self, tiles: int = 1) -> None:
+        self.push(Move.soft_drop(tiles))
 
     def swap(self) -> None:
         self.push(Move.swap())
