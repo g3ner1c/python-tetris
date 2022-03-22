@@ -277,7 +277,6 @@ class BaseGame:
     def rotate(self, turns: int = 1) -> None:
         self.push(Move.rotate(turns))
 
-
     def hard_drop(self) -> None:
         self.push(Move.hard_drop())
 
