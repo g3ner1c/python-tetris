@@ -140,7 +140,8 @@ class MinoType(enum.IntEnum):
 class Piece:
     """Object representing a game's piece.
 
-    Usually, this object is only directly instantiated by a `tetris.engine.abcs.RotationSystem`
+    Usually, this object is only directly instantiated by a
+    `tetris.engine.abcs.RotationSystem`.
 
     Attributes
     ----------
@@ -238,7 +239,7 @@ class MoveDelta(PartialMove):
     The `x`, `y` and `r` attributes are the absolute deltas -- that is,
     ``piece.x - delta.x`` is equal to the previous state. `rx`, `ry` and `rr`
     are the original values (e.g. the ones provided in a `Move` to
-    `tetris.BaseGame.push`)
+    `tetris.BaseGame.push`).
 
     Attributes
     ----------
