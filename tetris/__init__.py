@@ -1,3 +1,5 @@
+"""A simple and modular library for implementing and analysing Tetris games."""
+
 import importlib.metadata
 
 from tetris import engine

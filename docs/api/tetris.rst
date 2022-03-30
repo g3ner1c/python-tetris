@@ -1,11 +1,6 @@
 tetris package
 ==============
 
-.. automodule:: tetris
-   :members:
-   :show-inheritance:
-   :ignore-module-all:
-
 Subpackages
 -----------
 
@@ -17,18 +12,15 @@ Subpackages
 Submodules
 ----------
 
-tetris.game module
-------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: tetris.game
+   tetris.game
+   tetris.types
+
+Module contents
+---------------
+
+.. automodule:: tetris
    :members:
    :show-inheritance:
-   :ignore-module-all:
-
-tetris.types module
--------------------
-
-.. automodule:: tetris.types
-   :members:
-   :show-inheritance:
-   :ignore-module-all:

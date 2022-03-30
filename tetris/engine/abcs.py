@@ -20,6 +20,14 @@ if TYPE_CHECKING:
 
 
 class RotationSystem(abc.ABC):
+    """Abstract base class for rotation systems.
+
+    Parameters
+    ----------
+    board : tetris.types.Board
+        The board this should operate on.
+    """
+
     def __init__(self, board: Board):
         self.board = board
 
@@ -40,6 +48,27 @@ class RotationSystem(abc.ABC):
         ...
 
     def overlaps(self, piece=None, minos=None, px=None, py=None):
+        """Check if a piece's minos would overlap with anything.
+
+        This method expects either `piece`, or `minos`, `px` and `py` to be
+        provided.
+
+        Parameters
+        ----------
+        piece : tetris.Piece, optional
+            The piece object to check against.
+        minos : tetris.types.Minos, optional
+            The piece's minos to check.
+        px : int, optional
+            The piece x position.
+        py : int, optional
+            The piece y position.
+
+        Raises
+        ------
+        TypeError
+            The incorrect arguments were provided.
+        """
         if piece is not None:
             minos = piece.minos
             px = piece.x
@@ -59,6 +88,32 @@ class RotationSystem(abc.ABC):
 
 
 class Queue(abc.ABC, Sequence):
+    """Abstract base class for queue implementations.
+
+    This class extends `collections.abc.Sequence` and consists of `PieceType`
+    values. The length is always 7.
+
+    Notes
+    -----
+    This class provides a `pop` method to remove and return the *first* piece
+    in the queue.
+
+    For subclassing, you are expected to use the `_random` attribute (a
+    `random.Random` object) and update `_pieces` (a list of `tetris.PieceType`
+    which should have a length of *at least* 7). Usually, the only method that
+    needs to be overrided is `fill`.
+
+    Examples
+    --------
+    Since most boilerplate is taken care of under the hood, it's really simple
+    to subclass this and implement your own queue randomiser. The source code
+    for the `SevenBag` class is itself a good example::
+
+        class SevenBag(Queue):
+            def fill(self) -> None:
+                self._pieces.extend(self._random.sample(list(PieceType), 7))
+    """
+
     def __init__(
         self, pieces: Optional[Iterable[int]] = None, seed: Optional[Seed] = None
     ):
@@ -70,6 +125,7 @@ class Queue(abc.ABC, Sequence):
             self.fill()
 
     def pop(self) -> PieceType:
+        """Remove and return the first piece of the queue"""
         if len(self._pieces) <= 7:
             self.fill()
 
@@ -77,10 +133,17 @@ class Queue(abc.ABC, Sequence):
 
     @abc.abstractmethod
     def fill(self) -> None:
+        """Refill the queue's pieces.
+
+        Notes
+        -----
+        Internally, this is called automatically when the queue is exhausted.
+        """
         ...
 
     @property
     def seed(self) -> Seed:
+        """The random seed being used."""
         return self._seed
 
     def __iter__(self) -> Iterator[PieceType]:
@@ -121,9 +184,28 @@ class Scorer(abc.ABC):
 
 
 class Gravity(abc.ABC):
+    """Abstract base class for gravity implementations.
+
+    Parameters
+    ----------
+    game : BaseGame
+        The game this should operate on.
+    """
+
     def __init__(self, game: BaseGame):
         self.game = game
 
     @abc.abstractmethod
     def calculate(self, delta: Optional[MoveDelta] = None) -> None:
+        """Calculate the piece's drop and apply moves
+
+        This function is called on every `tetris.BaseGame.tick` and
+        `tetris.BaseGame.push`. It should take care of timing by itself.
+
+        Parameters
+        ----------
+        delta : MoveDelta, optional
+            The delta, if called from `tetris.BaseGame.push`. This is also not
+            provided if the last move was automatic, to prevent recursion.
+        """
         ...

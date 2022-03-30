@@ -12,6 +12,31 @@ from tetris.engine.scorer import GuidelineScorer
 
 @dataclasses.dataclass
 class Engine:
+    """Dataclass containing logic implementations for `tetris.BaseGame`.
+
+    Parameters
+    ----------
+    gravity : type[Gravity]
+        The gravity implementation this should use.
+    queue : type[Queue]
+        The queue implementation this should use.
+    rs : type[RotationSystem]
+        The rotation system this should use.
+    scorer : type[Scorer]
+        The scoring implementation this should use.
+
+    Attributes
+    ----------
+    gravity : type[Gravity]
+        The gravity implementation this is using.
+    queue : type[Queue]
+        The queue implementation this is using.
+    rs : type[RotationSystem]
+        The rotation system this is using.
+    scorer : type[Scorer]
+        The scoring implementation this is using.
+    """
+
     gravity: type[Gravity]
     queue: type[Queue]
     rs: type[RotationSystem]

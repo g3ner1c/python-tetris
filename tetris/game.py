@@ -1,3 +1,5 @@
+"""Primary implementation for game objects."""
+
 import dataclasses
 import math
 import secrets
@@ -32,6 +34,78 @@ _default_tiles = {
 
 
 class BaseGame:
+    """Base class for tetris games.
+
+    This class only provides the core game logic and is strictly dependent on
+    `tetris.Engine` objects, which provide most of the game logic.
+
+    Parameters
+    ----------
+    engine : tetris.engine.Engine, default = tetris.DefaultEngine
+        An Engine object, which contains the modular logic for the game.
+    seed : tetris.types.Seed, optional
+        A str, int or bytes object, which will be used as the games's
+        random seed. Optional, defaults to calling `secrets.token_bytes`.
+    board : tetris.types.Board, optional
+        A 2D `numpy.ndarray` with scalar `numpy.int8`, given as the
+        initial board data. Optional, defaults to making a new board.
+
+        .. hint::
+            The *visible* board is half as short as the given (*internal*)
+            board. This is so as to "buffer" the board from large attacks.
+    board_size : tuple[int, int], default = (20, 10)
+        An integer tuple for the height/width of the (visible) board. This is
+        ignored if a board is provided.
+    level : int, default = 0
+        The inital level to set on `tetris.engine.abcs.Scorer`.
+    score : int, default = 0
+        The inital score to set on `tetris.engine.abcs.Scorer`.
+
+    Attributes
+    ----------
+    engine : tetris.Engine
+        The `tetris.Engine` instance currently being used by this game.
+    board : numpy.ndarray
+        The `numpy.ndarray` storing the board state. All values correspond to
+        `tetris.MinoType`. This board is twice as tall as the visible board.
+        (see `height` and `width` for the proper board shape)
+
+        .. hint::
+            This attribute does not include the ghost piece or the
+            not-locked piece. Using `render` takes care of this.
+    gravity : tetris.engine.abcs.Gravity
+        .. seealso:: The `tetris.engine.gravity` module.
+    queue : tetris.engine.abcs.Queue
+        .. seealso:: The `tetris.engine.queue` module.
+    rs: tetris.engine.abcs.RotationSystem
+        .. seealso:: The `tetris.engine.rotation` module.
+    scorer : tetris.engine.abcs.Scorer
+        .. seealso:: The `tetris.engine.scorer` module.
+    piece : tetris.Piece
+        The active, not-locked piece.
+    seed : tetris.types.Seed
+        The random seed provided or generated for this game.
+    delta : tetris.MoveDelta or None
+        The deltas for the last applied move. This is `None` before any move
+        is made.
+    hold : tetris.PieceType or None
+        The hold piece. By default, it starts empty (`None`).
+    hold_lock : bool
+        True if the hold piece can't be swapped (i.e. it was already swapped).
+    status : tetris.PlayingStatus
+        Enum referencing the current game status. Pushing moves will only work
+        when this is `tetris.PlayingStatus.playing`.
+
+        .. seealso:: `playing`, `paused`, `lost` properties.
+    score : int
+    level : int
+    height : int
+    width : int
+    playing : bool
+    paused : bool
+    lost : bool
+    """
+
     def __init__(
         self,
         engine: Engine = DefaultEngine,
@@ -67,6 +141,7 @@ class BaseGame:
 
     @property
     def score(self) -> int:
+        """Current game score, shorthand for `scorer.score`."""
         return self.scorer.score
 
     @score.setter
@@ -75,6 +150,7 @@ class BaseGame:
 
     @property
     def level(self) -> int:
+        """The current game level, shorthand for `scorer.level`."""
         return self.scorer.level
 
     @level.setter
@@ -83,25 +159,39 @@ class BaseGame:
 
     @property
     def height(self) -> int:
+        """The visible board's height. This is half of the internal size."""
         return self.board.shape[0] // 2
 
     @property
     def width(self) -> int:
+        """The visible board's width."""
         return self.board.shape[1]
 
     @property
     def playing(self) -> bool:
+        """True if currently playing."""
         return self.status == PlayingStatus.playing
 
     @property
     def paused(self) -> bool:
+        """True if currently idle (i.e. paused)."""
         return self.status == PlayingStatus.idle
 
     @property
     def lost(self) -> bool:
+        """True if the game stopped."""
         return self.status == PlayingStatus.stopped
 
     def reset(self, seed: Optional[Seed] = None, level: int = 0) -> None:
+        """Restart the game, only keeping the `self.engine` instance.
+
+        Parameters
+        ----------
+        seed : tetris.types.Seed, optional
+            The random seed to initialise this with.
+        level : int, optional
+            The initial level to set on `tetris.engine.abcs.Scorer`.
+        """
         self.seed = seed or secrets.token_bytes()
         self.board[:] = 0
         self.gravity = self.engine.gravity(self)
@@ -116,6 +206,13 @@ class BaseGame:
         self.hold_lock = False
 
     def pause(self, state: Optional[bool] = None) -> None:
+        """Pause or resume the game.
+
+        Parameters
+        ----------
+        state : bool, optional
+            If provided, set the pause state to this, otherwise toggle it.
+        """
         if self.status == PlayingStatus.playing and (state is None or state is True):
             self.status = PlayingStatus.idle
 
@@ -213,6 +310,40 @@ class BaseGame:
         tiles: Optional[dict[MinoType, str]] = None,
         lines: Optional[int] = None,
     ) -> str:
+        """Render the `board` to a string.
+
+        This method also takes care of visual clues: the ghost piece and the
+        (not locked) piece itself.
+
+        Parameters
+        ----------
+        tiles : `tetris.MinoType` to str mapping, optional
+            A mapping with the corresponding text for the minos.
+        lines : int, optional
+            Amount of lines to render. Optional, defaults to `height`.
+
+        Returns
+        -------
+        str
+            The rendered board
+
+        Examples
+        --------
+        >>> ...
+        >>> tiles = {i: "[]" for i in tetris.MinoType}
+        >>> tiles.update({tetris.MinoType.EMPTY: "  ", tetris.MinoType.GHOST: "@ "})
+        >>> print(game.render(tiles=tiles, lines=10))
+        <BLANKLINE>
+        <BLANKLINE>
+        @
+        @ @ [][]
+        @     [][][]      []
+        [][]  [][][][][][][]
+        []    [][][][][][][]
+        []      [][][][][][]
+        [][]  [][][][][][][]
+        [][]  [][][][][][][]
+        """
         if lines is None:
             lines = self.height
 
@@ -236,6 +367,12 @@ class BaseGame:
         return "\n".join("".join(tiles[j] for j in i) for i in board[-lines:])
 
     def push(self, move: PartialMove) -> None:
+        """Push a move into the game.
+
+        Parameters
+        ----------
+        move : tetris.PartialMove
+        """
         if self.status != PlayingStatus.playing:
             return
 
@@ -263,27 +400,60 @@ class BaseGame:
             self.gravity.calculate(self.delta)
 
     def tick(self) -> None:
+        """Tick the game's logic."""
         self.gravity.calculate()
 
     def drag(self, tiles: int) -> None:
+        """Shorthand for `push(tetris.Move.drag(tiles))`.
+
+        Parameters
+        ----------
+        tiles : int
+        """
         self.push(Move.drag(tiles))
 
     def left(self, tiles: int = 1) -> None:
+        """Shorthand for `push(tetris.Move.left(tiles))`.
+
+        Parameters
+        ----------
+        tiles : int
+        """
         self.push(Move.left(tiles))
 
     def right(self, tiles: int = 1) -> None:
+        """Shorthand for `push(tetris.Move.right(tiles))`.
+
+        Parameters
+        ----------
+        tiles : int
+        """
         self.push(Move.right(tiles))
 
     def rotate(self, turns: int = 1) -> None:
+        """Shorthand for `push(tetris.Move.rotate(turns))`.
+
+        Parameters
+        ----------
+        turns : int, default = 1
+        """
         self.push(Move.rotate(turns))
 
     def hard_drop(self) -> None:
+        """Shorthand for `push(tetris.Move.hard_drop())`."""
         self.push(Move.hard_drop())
 
     def soft_drop(self, tiles: int = 1) -> None:
+        """Shorthand for `push(tetris.Move.soft_drop(tiles))`.
+
+        Parameters
+        ----------
+        tiles : int, default = 1
+        """
         self.push(Move.soft_drop(tiles))
 
     def swap(self) -> None:
+        """Shorthand for `push(tetris.Move.swap())`."""
         self.push(Move.swap())
 
     def __str__(self) -> str:
