@@ -28,6 +28,12 @@ Z Z
   Z Z
 ```
 
+## Links
+
+- [Documentation](https://python-tetris.readthedocs.io/)
+- [PyPI](https://pypi.org/project/tetris)
+- Support: [create an issue](https://github.com/dzshn/python-tetris/issues/new/choose) or [see author contact](https://dzshn.xyz)
+
 ## Install
 
 This package is available on [PyPI](https://pypi.org/project/tetris/), you can install it with pip:
@@ -41,11 +47,4 @@ To install the git version:
 
 ```sh
 pip install git+https://github.com/dzshn/python-tetris
-```
-
-Or, package from source using [poetry](https://python-poetry.org/):
-
-```sh
-poetry install
-poetry build
 ```

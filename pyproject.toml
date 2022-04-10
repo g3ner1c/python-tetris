@@ -7,6 +7,7 @@ license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/dzshn/python-tetris"
 repository = "https://github.com/dzshn/python-tetris"
+documentation = "https://python-tetris.readthedocs.io/"
 keywords = ["tetris", "stacker"]
 classifiers = [
     "Development Status :: 4 - Beta",
