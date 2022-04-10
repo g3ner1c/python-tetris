@@ -7,6 +7,7 @@ license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/dzshn/python-tetris"
 repository = "https://github.com/dzshn/python-tetris"
+documentation = "https://python-tetris.readthedocs.io/"
 keywords = ["tetris", "stacker"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -23,10 +24,20 @@ include = ["examples/"]
 python = ">=3.9,<3.11"
 numpy = "^1.21.4"
 typing-extensions = "^4.0.1"
+Sphinx = { version = "^4.4.0", optional = true }
+furo = { version = "^2022.3.4", optional = true }
+numpydoc = { version = "^1.2", optional = true }
 
 [tool.poetry.dev-dependencies]
 tox = "^3.24.5"
-pdoc = "^10.0.2"
+Sphinx = "^4.4.0"
+furo = "^2022.3.4"
+numpydoc = "^1.2"
+# Their github is still updated but the last release was in May 17 2021
+pydocstyle = {git = "https://github.com/PyCQA/pydocstyle"}
+
+[toll.poetry.extras]
+docs = ["Sphinx", "furo", "numpydoc"]
 
 [tool.black]
 

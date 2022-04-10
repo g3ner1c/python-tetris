@@ -1,3 +1,5 @@
+"""Built-in implementations of rotation systems."""
+
 from typing import ClassVar
 
 from tetris.engine.abcs import RotationSystem
@@ -9,6 +11,18 @@ KickTable = dict[tuple[int, int], tuple[tuple[int, int], ...]]  # pardon
 
 
 class SRS(RotationSystem):
+    """The SRS rotation system.
+
+    SRS, aka Super Rotation System or Standard Rotation System, is the rotation
+    system found in games following the Tetris Guideline.
+
+    Notes
+    -----
+    While there are many variations introducing 180° kicks, this class does not
+    attempt in doing so. If you wish to use 180° rotation you'll need to extend
+    the kick table or use another built-in class like `TetrioSRS`.
+    """
+
     shapes: ClassVar[dict[PieceType, list[Minos]]] = {
         PieceType.I: [
             ((1, 0), (1, 1), (1, 2), (1, 3)),
@@ -76,7 +90,7 @@ class SRS(RotationSystem):
         (3, 2): ((+0, -2), (+0, +1), (+1, -2), (-2, +1)),
     }
 
-    def spawn(self, piece: PieceType) -> Piece:
+    def spawn(self, piece: PieceType) -> Piece:  # noqa: D102
         mx, my = self.board.shape
 
         return Piece(
@@ -89,7 +103,7 @@ class SRS(RotationSystem):
             minos=self.shapes[piece][0],
         )
 
-    def rotate(self, piece: Piece, from_r: int, to_r: int) -> None:
+    def rotate(self, piece: Piece, from_r: int, to_r: int) -> None:  # noqa: D102
         minos = self.shapes[piece.type][to_r]
 
         if not self.overlaps(minos=minos, px=piece.x, py=piece.y):
@@ -123,10 +137,14 @@ _Tetrio_override = {
 
 
 class TetrioSRS(SRS):
+    """The Tetr.IO SRS variant. Adding a 180° kick table."""
+
     kicks: ClassVar[KickTable] = SRS.kicks | _Tetrio_override
     i_kicks: ClassVar[KickTable] = SRS.i_kicks | _Tetrio_override
 
 
 class NoKicks(SRS):
+    """A SRS variant with wall kicks disabled."""
+
     kicks: ClassVar[KickTable] = {}
     i_kicks: ClassVar[KickTable] = {}
