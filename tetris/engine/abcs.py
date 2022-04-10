@@ -1,3 +1,5 @@
+"""Abstract base classes for parts of the game logic."""
+
 from __future__ import annotations
 
 import abc
@@ -33,10 +35,33 @@ class RotationSystem(abc.ABC):
 
     @abc.abstractmethod
     def spawn(self, piece: PieceType) -> Piece:
+        """Return a new piece with a given type.
+
+        Parameters
+        ----------
+        piece : PieceType
+            The piece type to use.
+
+        Returns
+        -------
+        Piece
+            The generated `tetris.Piece` object.
+        """
         ...
 
     @abc.abstractmethod
     def rotate(self, piece: Piece, from_r: int, to_r: int) -> None:
+        """Rotate the given piece in-place.
+
+        Parameters
+        ----------
+        piece : Piece
+            The piece object.
+        from_r : int
+            The starting `r` (rotation).
+        to_r : int
+            The expected `r` (rotation).
+        """
         ...
 
     @overload
@@ -125,7 +150,7 @@ class Queue(abc.ABC, Sequence):
             self.fill()
 
     def pop(self) -> PieceType:
-        """Remove and return the first piece of the queue"""
+        """Remove and return the first piece of the queue."""
         if len(self._pieces) <= 7:
             self.fill()
 
@@ -171,6 +196,16 @@ class Queue(abc.ABC, Sequence):
 
 
 class Scorer(abc.ABC):
+    """Abstract base class for score systems.
+
+    Attributes
+    ----------
+    score : int
+        The current game score
+    level : int
+        The current game level
+    """
+
     score: int
     level: int
 
@@ -180,6 +215,12 @@ class Scorer(abc.ABC):
 
     @abc.abstractmethod
     def judge(self, delta: MoveDelta) -> None:
+        """Judge a game's move.
+
+        Parameters
+        ----------
+        delta : tetris.MoveDelta
+        """
         ...
 
 
@@ -197,7 +238,7 @@ class Gravity(abc.ABC):
 
     @abc.abstractmethod
     def calculate(self, delta: Optional[MoveDelta] = None) -> None:
-        """Calculate the piece's drop and apply moves
+        """Calculate the piece's drop and apply moves.
 
         This function is called on every `tetris.BaseGame.tick` and
         `tetris.BaseGame.push`. It should take care of timing by itself.

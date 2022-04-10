@@ -1,3 +1,5 @@
+"""Built-in gravity implementations."""
+
 from __future__ import annotations
 
 import time
@@ -15,6 +17,16 @@ SECOND: Final[int] = 1_000_000_000  # in nanoseconds
 
 
 class Timer:
+    """Helper class for time-keeping.
+
+    Parameters
+    ----------
+    seconds : default = 0
+    milliseconds : default = 0
+    microseconds : default = 0
+    nanoseconds : default = 0
+    """
+
     __slots__ = ("duration", "running", "started")
 
     def __init__(
@@ -32,19 +44,29 @@ class Timer:
         self.running = False
 
     def start(self) -> None:
+        """(re)start the timer."""
         self.started = time.monotonic_ns()
         self.running = True
 
     def stop(self) -> None:
+        """Stop the timer."""
         self.started = 0
         self.running = False
 
     @property
     def done(self) -> bool:
+        """True if this timer is running and has finished."""
         return self.running and self.started + self.duration <= time.monotonic_ns()
 
 
 class InfinityGravity(Gravity):
+    """Marathon gravity with Infinity lock delay.
+
+    Notes
+    -----
+    See <https://tetris.wiki/Infinity> and <https://tetris.wiki/Marathon>.
+    """
+
     def __init__(self, game: BaseGame):
         self.game = game
 
@@ -52,7 +74,7 @@ class InfinityGravity(Gravity):
         self.lock_resets = 0
         self.last_drop = time.monotonic_ns()
 
-    def calculate(self, delta: Optional[MoveDelta] = None) -> None:
+    def calculate(self, delta: Optional[MoveDelta] = None) -> None:  # noqa: D102
         level = self.game.level
         piece = self.game.piece
         drop_delay = (0.8 - ((level - 1) * 0.007)) ** (level - 1) * SECOND

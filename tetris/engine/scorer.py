@@ -1,3 +1,5 @@
+"""Built-in implementations of scoring systems."""
+
 from tetris.engine.abcs import Scorer
 from tetris.types import MoveDelta
 from tetris.types import MoveKind
@@ -5,6 +7,17 @@ from tetris.types import PieceType
 
 
 class GuidelineScorer(Scorer):
+    """The Tetris Guideline scoring system.
+
+    Notes
+    -----
+    Specifically, this class implements the score table defined in the 2009
+    guideline with 3 corner T-Spins and T-Spin Mini detection, plus the perfect
+    clear score table per recent games.
+
+    A more thorough explanation can be found at <https://tetris.wiki/Scoring>.
+    """
+
     def __init__(self):  # type: ignore[no-untyped-def]
         self.score = 0
         self.level = 0
@@ -12,7 +25,7 @@ class GuidelineScorer(Scorer):
         self.combo = 0
         self.back_to_back = 0
 
-    def judge(self, delta: MoveDelta) -> None:
+    def judge(self, delta: MoveDelta) -> None:  # noqa: D102
         if delta.kind == MoveKind.soft_drop:
             if not delta.auto:
                 self.score += delta.x * self.level
@@ -97,11 +110,19 @@ class GuidelineScorer(Scorer):
 
 
 class NoScorer(Scorer):
-    def judge(self, delta: MoveDelta) -> None:
+    """Annulled scoring system."""
+
+    def judge(self, delta: MoveDelta) -> None:  # noqa: D102
         pass
 
 
 class BPSScorer(Scorer):
-    def judge(self, delta: MoveDelta) -> None:
+    """The 1988 BPS scoring system.
+
+    This class is intended as an example implementation of a simple scoring
+    system.
+    """
+
+    def judge(self, delta: MoveDelta) -> None:  # noqa: D102
         if delta.kind == MoveKind.hard_drop:
             self.score += [0, 40, 100, 300, 1200][len(delta.clears)]

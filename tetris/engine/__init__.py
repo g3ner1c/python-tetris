@@ -1,3 +1,5 @@
+"""Modular game logic implementations."""
+
 import dataclasses
 
 from tetris.engine.abcs import Gravity
