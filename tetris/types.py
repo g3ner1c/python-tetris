@@ -304,6 +304,8 @@ class Move(PartialMove):
         True if this move was performed automatically (e.g. from gravity).
     """
 
+    __slots__ = ()
+
     @classmethod
     def drag(cls, tiles: int) -> Move:
         """Return a `Move` object representing horizontal movement.
