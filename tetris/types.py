@@ -231,6 +231,14 @@ class PartialMove:
         self.r = r % 4
         self.auto = auto
 
+    def __eq__(self, other: PartialMove) -> bool:
+        return (
+            self.kind == other.kind
+            and self.x == other.x
+            and self.y == other.y
+            and self.r == other.r
+        )
+
 
 @final
 class MoveDelta(PartialMove):
@@ -284,6 +292,8 @@ class MoveDelta(PartialMove):
         self.rr = self.r
         self.clears = clears or []
         self.auto = auto
+
+    __eq__ = object.__eq__
 
 
 @final
