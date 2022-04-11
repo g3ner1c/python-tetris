@@ -50,17 +50,15 @@ class RotationSystem(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def rotate(self, piece: Piece, from_r: int, to_r: int) -> None:
+    def rotate(self, piece: Piece, r: int) -> None:
         """Rotate the given piece in-place.
 
         Parameters
         ----------
         piece : Piece
             The piece object.
-        from_r : int
-            The starting `r` (rotation).
-        to_r : int
-            The expected `r` (rotation).
+        r : int
+            The `r` (rotation) offset.
         """
         ...
 

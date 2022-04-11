@@ -103,20 +103,21 @@ class SRS(RotationSystem):
             minos=self.shapes[piece][0],
         )
 
-    def rotate(self, piece: Piece, from_r: int, to_r: int) -> None:  # noqa: D102
+    def rotate(self, piece: Piece, r: int) -> None:  # noqa: D102
+        to_r = (piece.r + r) % 4
         minos = self.shapes[piece.type][to_r]
 
         if not self.overlaps(minos=minos, px=piece.x, py=piece.y):
             piece.r = to_r
 
-        elif (from_r, to_r) in self.kicks:
+        elif (piece.r, to_r) in self.kicks:
             if piece.type == PieceType.I:
                 table = self.i_kicks
 
             else:
                 table = self.kicks
 
-            kicks = table[from_r, to_r]
+            kicks = table[piece.r, to_r]
 
             for x, y in kicks:
                 if not self.overlaps(minos=minos, px=piece.x + x, py=piece.y + y):

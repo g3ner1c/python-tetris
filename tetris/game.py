@@ -296,11 +296,10 @@ class BaseGame:
 
     def _rotate(self, turns: int) -> None:
         assert self.delta
-        piece = self.piece
-        x = piece.x
-        y = piece.y
-        r = piece.r
-        self.rs.rotate(piece, piece.r, (piece.r + turns) % 4)
+        x = self.piece.x
+        y = self.piece.y
+        r = self.piece.r
+        self.rs.rotate(self.piece, turns)
         self.delta.x = x - self.piece.x
         self.delta.y = y - self.piece.y
         self.delta.r = r - self.piece.r
