@@ -104,6 +104,7 @@ class BaseGame:
     playing : bool
     paused : bool
     lost : bool
+    playfield : Board
     """
 
     def __init__(
@@ -181,6 +182,51 @@ class BaseGame:
     def lost(self) -> bool:
         """True if the game stopped."""
         return self.status == PlayingStatus.stopped
+
+    @property
+    def playfield(self) -> Board:
+        """The visible board with visual elements."""
+        return self.get_playfield(buffer_lines=0)
+
+    def get_playfield(self, buffer_lines: int = 0) -> Board:
+        """Return a read-only board with visual elements.
+
+        This function returns the proper playfield, with visual elements
+        such as the ghost piece and the current piece. This should be used
+        when rendering the game.
+
+        Parameters
+        ----------
+        buffer_lines : int, default = 0
+            By default, the returned board has the dimensions of the visible
+            board (see `height`/`width`). This parameter allows you to show
+            part of the hidden area.
+
+            .. note::
+                If part of the buffer area is shown, it is recommended that
+                this area renders out of the board frame.
+
+        Returns
+        -------
+        Board
+            The generated board.
+        """
+        board = self.board.copy()
+        piece = self.piece
+        ghost_x = piece.x
+
+        for x in range(piece.x + 1, board.shape[0]):
+            if self.rs.overlaps(minos=piece.minos, px=x, py=piece.y):
+                break
+
+            ghost_x = x
+
+        for x, y in piece.minos:
+            board[x + ghost_x, y + piece.y] = 8
+            board[x + piece.x, y + piece.y] = piece.type
+
+        board.flags.writeable = False
+        return board[-self.height - buffer_lines :]
 
     def reset(self, seed: Optional[Seed] = None, level: int = 0) -> None:
         """Restart the game, only keeping the `self.engine` instance.
@@ -313,6 +359,10 @@ class BaseGame:
 
         This method also takes care of visual clues: the ghost piece and the
         (not locked) piece itself.
+
+        .. deprecated:: 0.6.0
+            Will be removed before 1.0.0. Use the `get_playfield` method or the
+            `playfield` property instead.
 
         Parameters
         ----------
@@ -456,7 +506,20 @@ class BaseGame:
         self.push(Move.swap())
 
     def __str__(self) -> str:
-        return self.render(tiles={k: v + " " for k, v in _default_tiles.items()})
+        tiles = {
+            MinoType.EMPTY: " ",
+            MinoType.GHOST: "@",
+            MinoType.GARBAGE: "X",
+        }
+
+        text = ""
+        for line in self.playfield:
+            for i in line:
+                text += tiles.get(i) or PieceType(i).name
+                text += " "
+            text += "\n"
+
+        return text.rstrip("\n")
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(engine={self.engine})"

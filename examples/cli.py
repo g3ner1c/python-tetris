@@ -2,6 +2,7 @@ import curses
 import time
 
 import tetris
+from tetris import MinoType
 from tetris import Move
 
 
@@ -41,16 +42,16 @@ def main(screen: curses.window) -> None:
     )
 
     colors = {
-        " ": curses.A_NORMAL,
-        "I": cyan,
-        "L": yellow,
-        "J": blue,
-        "S": green,
-        "Z": red,
-        "T": magenta,
-        "O": yellow,
-        "X": black,
-        "@": white,
+        MinoType.EMPTY: curses.A_NORMAL,
+        MinoType.I: cyan,
+        MinoType.L: yellow,
+        MinoType.J: blue,
+        MinoType.S: green,
+        MinoType.Z: red,
+        MinoType.T: magenta,
+        MinoType.O: yellow,
+        MinoType.GARBAGE: black,
+        MinoType.GHOST: white,
     }
 
     curses.curs_set(0)
@@ -61,26 +62,30 @@ def main(screen: curses.window) -> None:
         my, mx = screen.getmaxyx()
         board = screen.subwin(22, 22, my // 2 - 11, mx // 2 - 22)
         status = screen.subwin(22, 20, my // 2 - 11, 23 + mx // 2 - 22)
-        for y, line in enumerate(game.render().splitlines()):
-            for x, ch in enumerate(line):
-                paint = colors[ch]
-                if not game.playing:
-                    paint = paint | curses.A_DIM
+        for x, line in enumerate(game.playfield):
+            for y, i in enumerate(line):
+                paint = colors[i]
+                ch = "[]"
+                if i == MinoType.GARBAGE:
+                    ch = "X "
+                elif i == MinoType.GHOST:
+                    ch = "@ "
+                elif i == MinoType.EMPTY:
+                    ch = "  "
 
-                if ch not in [" ", "@", "X"]:
-                    ch = "[]"
-
-                board.addstr(y + 1, x * 2 + 1, ch, paint)
+                board.addstr(x + 1, y * 2 + 1, ch, paint)
 
         status.addstr(1, 2, " Queue ", curses.A_STANDOUT)
         for i, piece in enumerate(game.queue[:4]):
-            status.addstr(2, 4 + i * 3, piece.name, colors[piece.name])
+            status.addstr(2, 4 + i * 3, piece.name, colors[piece])  # type: ignore
             if i < 3:
                 status.addstr(2, 5 + i * 3, ",", curses.A_DIM)
 
         status.addstr(4, 2, " Hold ", curses.A_STANDOUT)
         if game.hold is not None:
-            status.addstr(5, 4, game.hold.name + " piece", colors[game.hold.name])
+            status.addstr(
+                5, 4, game.hold.name + " piece", colors[game.hold]  # type: ignore
+            )
 
         else:
             status.addstr(5, 4, ". . .", curses.A_DIM)
