@@ -36,7 +36,7 @@ numpydoc = "^1.2"
 # Their github is still updated but the last release was in May 17 2021
 pydocstyle = {git = "https://github.com/PyCQA/pydocstyle"}
 
-[toll.poetry.extras]
+[tool.poetry.extras]
 docs = ["Sphinx", "furo", "numpydoc"]
 
 [tool.black]
