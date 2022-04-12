@@ -231,7 +231,10 @@ class PartialMove:
         self.r = r % 4
         self.auto = auto
 
-    def __eq__(self, other: PartialMove) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PartialMove):
+            return NotImplemented
+
         return (
             self.kind == other.kind
             and self.x == other.x
