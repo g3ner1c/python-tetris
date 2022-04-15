@@ -7,8 +7,8 @@ from typing import Optional
 
 import numpy as np
 
-from tetris.engine import DefaultEngine
 from tetris.engine import Engine
+from tetris.impl.modern import ModernEngine
 from tetris.types import Board
 from tetris.types import MinoType
 from tetris.types import Move
@@ -109,14 +109,14 @@ class BaseGame:
 
     def __init__(
         self,
-        engine: Engine = DefaultEngine,
+        engine: Engine = ModernEngine,
         seed: Optional[Seed] = None,
         board: Optional[Board] = None,
         board_size: tuple[int, int] = (20, 10),
-        level: int = 0,
+        level: int = 1,
         score: int = 0,
     ):
-        self.engine = engine
+        self.engine = engine()
         self.seed = seed or secrets.token_bytes()
         if board is None:
             # Internally, we use 2x the height to "buffer" the board being
@@ -126,11 +126,10 @@ class BaseGame:
         else:
             self.board = board
 
-        self.gravity = engine.gravity(self)
-        self.queue = engine.queue(seed=self.seed)
-        self.rs = engine.rs(self.board)
-
-        self.scorer = engine.scorer()
+        self.gravity = self.engine.gravity(self)
+        self.queue = self.engine.queue(self)
+        self.rs = self.engine.rotation_system(self)
+        self.scorer = self.engine.scorer(self)
         self.scorer.level = level
         self.scorer.score = score
 

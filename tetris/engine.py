@@ -1,5 +1,3 @@
-"""Abstract base classes for parts of the game logic."""
-
 from __future__ import annotations
 
 import abc
@@ -19,6 +17,138 @@ from tetris.types import Seed
 
 if TYPE_CHECKING:
     from tetris import BaseGame
+
+
+class Engine(abc.ABC):
+    @abc.abstractmethod
+    def gravity(self, game: BaseGame) -> Gravity:
+        ...
+
+    @abc.abstractmethod
+    def queue(self, game: BaseGame) -> Queue:
+        ...
+
+    @abc.abstractmethod
+    def rotation_system(self, game: BaseGame) -> RotationSystem:
+        ...
+
+    @abc.abstractmethod
+    def scorer(self, game: BaseGame) -> Scorer:
+        ...
+
+
+class Gravity(abc.ABC):
+    """Abstract base class for gravity implementations.
+
+    Parameters
+    ----------
+    game : BaseGame
+        The game this should operate on.
+    """
+
+    def __init__(self, game: BaseGame):
+        self.game = game
+
+    @abc.abstractmethod
+    def calculate(self, delta: Optional[MoveDelta] = None) -> None:
+        """Calculate the piece's drop and apply moves.
+
+        This function is called on every `tetris.BaseGame.tick` and
+        `tetris.BaseGame.push`. It should take care of timing by itself.
+
+        Parameters
+        ----------
+        delta : MoveDelta, optional
+            The delta, if called from `tetris.BaseGame.push`. This is also not
+            provided if the last move was automatic, to prevent recursion.
+        """
+        ...
+
+
+class Queue(abc.ABC, Sequence):
+    """Abstract base class for queue implementations.
+
+    This class extends `collections.abc.Sequence` and consists of `PieceType`
+    values. The length is always 7.
+
+    Notes
+    -----
+    This class provides a `pop` method to remove and return the *first* piece
+    in the queue.
+
+    For subclassing, you are expected to use the `_random` attribute (a
+    `random.Random` object) and update `_pieces` (a list of `tetris.PieceType`
+    which should have a length of *at least* 7). Usually, the only method that
+    needs to be overrided is `fill`.
+
+    Examples
+    --------
+    Since most boilerplate is taken care of under the hood, it's really simple
+    to subclass this and implement your own queue randomiser. The source code
+    for the `SevenBag` class is itself a good example::
+
+        class SevenBag(Queue):
+            def fill(self) -> None:
+                self._pieces.extend(self._random.sample(list(PieceType), 7))
+    """
+
+    def __init__(
+        self, pieces: Optional[Iterable[int]] = None, seed: Optional[Seed] = None
+    ):
+        seed = seed or secrets.token_bytes()
+        self._seed = seed
+        self._random = random.Random(seed)
+        self._pieces = [PieceType(i) for i in pieces or []]
+        if len(self._pieces) <= 7:
+            self.fill()
+
+    def pop(self) -> PieceType:
+        """Remove and return the first piece of the queue."""
+        if len(self._pieces) <= 7:
+            self.fill()
+
+        return self._pieces.pop(0)
+
+    @abc.abstractmethod
+    def fill(self) -> None:
+        """Refill the queue's pieces.
+
+        Notes
+        -----
+        Internally, this is called automatically when the queue is exhausted.
+        """
+        ...
+
+    @property
+    def seed(self) -> Seed:
+        """The random seed being used."""
+        return self._seed
+
+    def __iter__(self) -> Iterator[PieceType]:
+        for i, j in enumerate(self._pieces):
+            if i >= 7:
+                break
+            yield j
+
+    @overload
+    def __getitem__(self, i: int) -> PieceType:
+        ...
+
+    @overload
+    def __getitem__(self, i: slice) -> list[PieceType]:
+        ...
+
+    def __getitem__(self, i):
+        return self._pieces[:7][i]
+
+    def __len__(self) -> int:
+        return 7
+
+    def __repr__(self) -> str:
+        return (
+            f"<{self.__class__.__name__} object "
+            f"[{', '.join(i.name for i in self) + ', ...'}]>"
+        )
 
 
 class RotationSystem(abc.ABC):
@@ -110,89 +240,6 @@ class RotationSystem(abc.ABC):
         return False
 
 
-class Queue(abc.ABC, Sequence):
-    """Abstract base class for queue implementations.
-
-    This class extends `collections.abc.Sequence` and consists of `PieceType`
-    values. The length is always 7.
-
-    Notes
-    -----
-    This class provides a `pop` method to remove and return the *first* piece
-    in the queue.
-
-    For subclassing, you are expected to use the `_random` attribute (a
-    `random.Random` object) and update `_pieces` (a list of `tetris.PieceType`
-    which should have a length of *at least* 7). Usually, the only method that
-    needs to be overrided is `fill`.
-
-    Examples
-    --------
-    Since most boilerplate is taken care of under the hood, it's really simple
-    to subclass this and implement your own queue randomiser. The source code
-    for the `SevenBag` class is itself a good example::
-
-        class SevenBag(Queue):
-            def fill(self) -> None:
-                self._pieces.extend(self._random.sample(list(PieceType), 7))
-    """
-
-    def __init__(
-        self, pieces: Optional[Iterable[int]] = None, seed: Optional[Seed] = None
-    ):
-        seed = seed or secrets.token_bytes()
-        self._seed = seed
-        self._random = random.Random(seed)
-        self._pieces = [PieceType(i) for i in pieces or []]
-        if len(self._pieces) <= 7:
-            self.fill()
-
-    def pop(self) -> PieceType:
-        """Remove and return the first piece of the queue."""
-        if len(self._pieces) <= 7:
-            self.fill()
-
-        return self._pieces.pop(0)
-
-    @abc.abstractmethod
-    def fill(self) -> None:
-        """Refill the queue's pieces.
-
-        Notes
-        -----
-        Internally, this is called automatically when the queue is exhausted.
-        """
-        ...
-
-    @property
-    def seed(self) -> Seed:
-        """The random seed being used."""
-        return self._seed
-
-    def __iter__(self) -> Iterator[PieceType]:
-        for i, j in enumerate(self._pieces):
-            if i >= 7:
-                break
-            yield j
-
-    @overload
-    def __getitem__(self, i: int) -> PieceType:
-        ...
-
-    @overload
-    def __getitem__(self, i: slice) -> list[PieceType]:
-        ...
-
-    def __getitem__(self, i):
-        return self._pieces[:7][i]
-
-    def __len__(self) -> int:
-        return 7
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({list(self)})"
-
-
 class Scorer(abc.ABC):
     """Abstract base class for score systems.
 
@@ -218,33 +265,5 @@ class Scorer(abc.ABC):
         Parameters
         ----------
         delta : tetris.MoveDelta
-        """
-        ...
-
-
-class Gravity(abc.ABC):
-    """Abstract base class for gravity implementations.
-
-    Parameters
-    ----------
-    game : BaseGame
-        The game this should operate on.
-    """
-
-    def __init__(self, game: BaseGame):
-        self.game = game
-
-    @abc.abstractmethod
-    def calculate(self, delta: Optional[MoveDelta] = None) -> None:
-        """Calculate the piece's drop and apply moves.
-
-        This function is called on every `tetris.BaseGame.tick` and
-        `tetris.BaseGame.push`. It should take care of timing by itself.
-
-        Parameters
-        ----------
-        delta : MoveDelta, optional
-            The delta, if called from `tetris.BaseGame.push`. This is also not
-            provided if the last move was automatic, to prevent recursion.
         """
         ...
