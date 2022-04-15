@@ -109,7 +109,7 @@ class BaseGame:
 
     def __init__(
         self,
-        engine: Engine = ModernEngine,
+        engine: type[Engine] = ModernEngine,
         seed: Optional[Seed] = None,
         board: Optional[Board] = None,
         board_size: tuple[int, int] = (20, 10),
@@ -240,9 +240,9 @@ class BaseGame:
         self.seed = seed or secrets.token_bytes()
         self.board[:] = 0
         self.gravity = self.engine.gravity(self)
-        self.queue = self.engine.queue(seed=self.seed)
-        self.rs = self.engine.rs(self.board)
-        self.scorer = self.engine.scorer()
+        self.queue = self.engine.queue(self)
+        self.rs = self.engine.rotation_system(self)
+        self.scorer = self.engine.scorer(self)
         self.scorer.level = level
         self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing

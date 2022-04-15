@@ -1,3 +1,5 @@
+"""Basis for core game logic."""
+
 from __future__ import annotations
 
 import abc
@@ -18,22 +20,64 @@ from tetris.types import Seed
 if TYPE_CHECKING:
     from tetris import BaseGame
 
+__all__ = (
+    "Engine",
+    "Gravity",
+    "Queue",
+    "RotationSystem",
+    "Scorer",
+)
+
 
 class Engine(abc.ABC):
+    """Factory object for parts of game logic.
+
+    Notes
+    -----
+    All methods receive a `BaseGame` as their arguments, this leaves it up to
+    the subclass to initialise those. This is useful, for instance, when
+    subclassing one of the engine parts and requiring another part of the game
+    to be provided (e.g. providing `game.seed`).
+    """
+
     @abc.abstractmethod
     def gravity(self, game: BaseGame) -> Gravity:
+        """Return a new `Gravity` object.
+
+        Returns
+        -------
+        Gravity
+        """
         ...
 
     @abc.abstractmethod
     def queue(self, game: BaseGame) -> Queue:
+        """Return a new `Queue` object.
+
+        Returns
+        -------
+        Queue
+        """
         ...
 
     @abc.abstractmethod
     def rotation_system(self, game: BaseGame) -> RotationSystem:
+        """Return a new `RotationSystem` object.
+
+        Returns
+        -------
+        RotationSystem
+        """
         ...
 
     @abc.abstractmethod
     def scorer(self, game: BaseGame) -> Scorer:
+        """Return a new `Scorer` object.
+
+        Returns
+        -------
+        Scorer
+        """
         ...
 
 

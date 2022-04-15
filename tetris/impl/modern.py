@@ -16,6 +16,14 @@ from tetris.types import PieceType
 if TYPE_CHECKING:
     from tetris import BaseGame
 
+__all__ = (
+    "InfinityGravity",
+    "ModernEngine",
+    "SevenBag",
+    "SRS",
+    "Timer",
+)
+
 KickTable = dict[tuple[int, int], tuple[tuple[int, int], ...]]  # pardon
 SECOND: Final[int] = 1_000_000_000  # in nanoseconds
 
@@ -364,14 +372,16 @@ class SevenBag(tetris.engine.Queue):
 
 
 class ModernEngine(tetris.Engine):
-    def queue(self, game: BaseGame) -> SevenBag:
+    """Guideline-compliant engine implementation."""
+
+    def queue(self, game: BaseGame) -> SevenBag:  # noqa: D102
         return SevenBag(seed=game.seed)
 
-    def scorer(self, game: BaseGame) -> Scorer:
+    def scorer(self, game: BaseGame) -> Scorer:  # noqa: D102
         return Scorer()
 
-    def rotation_system(self, game: BaseGame) -> SRS:
+    def rotation_system(self, game: BaseGame) -> SRS:  # noqa: D102
         return SRS(board=game.board)
 
-    def gravity(self, game: BaseGame) -> InfinityGravity:
+    def gravity(self, game: BaseGame) -> InfinityGravity:  # noqa: D102
         return InfinityGravity(game=game)
