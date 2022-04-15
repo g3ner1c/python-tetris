@@ -1,4 +1,4 @@
-"""Guideline-compliant tetris implementation."""
+"""Modern guideline-compliant Tetris implementation."""
 
 from __future__ import annotations
 
