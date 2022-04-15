@@ -102,6 +102,8 @@ class BaseGame:
     paused : bool
     lost : bool
     playfield : Board
+    **options : dict, optional
+        Extra arguments to pass to `engine`.
     """
 
     def __init__(
@@ -112,8 +114,9 @@ class BaseGame:
         board_size: tuple[int, int] = (20, 10),
         level: int = 1,
         score: int = 0,
+        **options,
     ):
-        self.engine = engine()
+        self.engine = engine(**options)
         self.seed = seed or secrets.token_bytes()
         if board is None:
             # Internally, we use 2x the height to "buffer" the board being

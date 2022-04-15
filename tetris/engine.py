@@ -93,6 +93,10 @@ class Gravity(abc.ABC):
     def __init__(self, game: BaseGame):
         self.game = game
 
+    @classmethod
+    def from_game(cls, game: BaseGame) -> Gravity:
+        return cls(game=game)
+
     @abc.abstractmethod
     def calculate(self, delta: Optional[MoveDelta] = None) -> None:
         """Calculate the piece's drop and apply moves.
@@ -145,6 +149,10 @@ class Queue(abc.ABC, Sequence):
         self._pieces = [PieceType(i) for i in pieces or []]
         if len(self._pieces) <= 7:
             self.fill()
+
+    @classmethod
+    def from_game(cls, game: BaseGame) -> Queue:
+        return cls(seed=game.seed)
 
     def pop(self) -> PieceType:
         """Remove and return the first piece of the queue."""
@@ -206,6 +214,10 @@ class RotationSystem(abc.ABC):
 
     def __init__(self, board: Board):
         self.board = board
+
+    @classmethod
+    def from_game(cls, game: BaseGame) -> RotationSystem:
+        return cls(board=game.board)
 
     @abc.abstractmethod
     def spawn(self, piece: PieceType) -> Piece:
@@ -301,6 +313,10 @@ class Scorer(abc.ABC):
     def __init__(self) -> None:
         self.score = 0
         self.level = 1
+
+    @classmethod
+    def from_game(cls, game: BaseGame) -> Scorer:
+        return cls()
 
     @abc.abstractmethod
     def judge(self, delta: MoveDelta) -> None:
