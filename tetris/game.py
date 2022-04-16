@@ -3,7 +3,7 @@
 import dataclasses
 import math
 import secrets
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -114,7 +114,7 @@ class BaseGame:
         board_size: tuple[int, int] = (20, 10),
         level: int = 1,
         score: int = 0,
-        **options,
+        **options: Any,
     ):
         self.engine = engine(**options)
         self.seed = seed or secrets.token_bytes()

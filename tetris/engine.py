@@ -95,6 +95,7 @@ class Gravity(abc.ABC):
 
     @classmethod
     def from_game(cls, game: BaseGame) -> Gravity:
+        """Construct this object from a game object."""
         return cls(game=game)
 
     @abc.abstractmethod
@@ -152,6 +153,7 @@ class Queue(abc.ABC, Sequence):
 
     @classmethod
     def from_game(cls, game: BaseGame) -> Queue:
+        """Construct this object from a game object."""
         return cls(seed=game.seed)
 
     def pop(self) -> PieceType:
@@ -217,6 +219,7 @@ class RotationSystem(abc.ABC):
 
     @classmethod
     def from_game(cls, game: BaseGame) -> RotationSystem:
+        """Construct this object from a game object."""
         return cls(board=game.board)
 
     @abc.abstractmethod
@@ -316,6 +319,7 @@ class Scorer(abc.ABC):
 
     @classmethod
     def from_game(cls, game: BaseGame) -> Scorer:
+        """Construct this object from a game object."""
         return cls()
 
     @abc.abstractmethod
