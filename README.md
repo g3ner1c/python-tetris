@@ -14,11 +14,10 @@ A simple and modular library for implementing and analysing Tetris games, [guide
 ```py
 >>> import tetris
 >>> game = tetris.BaseGame(board_size=(4, 4), seed=128)
->>> game.engine
-Engine(gravity=InfinityGravity, queue=SevenBag, rs=SRS, scorer=GuidelineScorer)
 >>> game.queue
-SevenBag([PieceType.J, PieceType.O, PieceType.L, PieceType.I, PieceType.T, PieceType.S, PieceType.J])
+<SevenBag object [J, O, L, I, T, S, J, ...]>
 >>> for _ in range(4): game.hard_drop()
+...
 >>> game.playing
 False
 >>> print(game)
@@ -30,9 +29,9 @@ Z Z
 
 ## Links
 
-- [Documentation](https://python-tetris.readthedocs.io/)
-- [PyPI](https://pypi.org/project/tetris)
-- Support: [create an issue](https://github.com/dzshn/python-tetris/issues/new/choose) or [see author contact](https://dzshn.xyz)
+-   [Documentation](https://python-tetris.readthedocs.io/)
+-   [PyPI](https://pypi.org/project/tetris)
+-   Support: [create an issue](https://github.com/dzshn/python-tetris/issues/new/choose) or [see author contact](https://dzshn.xyz)
 
 ## Install
 

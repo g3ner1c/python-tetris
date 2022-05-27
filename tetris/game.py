@@ -3,12 +3,12 @@
 import dataclasses
 import math
 import secrets
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
-from tetris.engine import DefaultEngine
 from tetris.engine import Engine
+from tetris.impl.modern import ModernEngine
 from tetris.types import Board
 from tetris.types import MinoType
 from tetris.types import Move
@@ -41,8 +41,9 @@ class BaseGame:
 
     Parameters
     ----------
-    engine : tetris.engine.Engine, default = tetris.DefaultEngine
-        An Engine object, which contains the modular logic for the game.
+    engine : tetris.engine.Engine class, default = tetris.impl.ModernEngine
+        An engine class, which contains a game's core logic. The default is to
+        mimic a modern Tetris game.
     seed : tetris.types.Seed, optional
         A str, int or bytes object, which will be used as the games's
         random seed. Optional, defaults to calling `secrets.token_bytes`.
@@ -57,9 +58,9 @@ class BaseGame:
         An integer tuple for the height/width of the (visible) board. This is
         ignored if a board is provided.
     level : int, default = 0
-        The inital level to set on `tetris.engine.abcs.Scorer`.
+        The inital level to set on `tetris.engine.Scorer`.
     score : int, default = 0
-        The inital score to set on `tetris.engine.abcs.Scorer`.
+        The inital score to set on `tetris.engine.Scorer`.
 
     Attributes
     ----------
@@ -73,14 +74,10 @@ class BaseGame:
         .. hint::
             This attribute does not include the ghost piece or the
             not-locked piece. Using `render` takes care of this.
-    gravity : tetris.engine.abcs.Gravity
-        .. seealso:: The `tetris.engine.gravity` module.
-    queue : tetris.engine.abcs.Queue
-        .. seealso:: The `tetris.engine.queue` module.
-    rs: tetris.engine.abcs.RotationSystem
-        .. seealso:: The `tetris.engine.rotation` module.
-    scorer : tetris.engine.abcs.Scorer
-        .. seealso:: The `tetris.engine.scorer` module.
+    gravity : tetris.engine.Gravity
+    queue : tetris.engine.Queue
+    rs: tetris.engine.RotationSystem
+    scorer : tetris.engine.Scorer
     piece : tetris.Piece
         The active, not-locked piece.
     seed : tetris.types.Seed
@@ -105,18 +102,21 @@ class BaseGame:
     paused : bool
     lost : bool
     playfield : Board
+    **options : dict, optional
+        Extra arguments to pass to `engine`.
     """
 
     def __init__(
         self,
-        engine: Engine = DefaultEngine,
+        engine: type[Engine] = ModernEngine,
         seed: Optional[Seed] = None,
         board: Optional[Board] = None,
         board_size: tuple[int, int] = (20, 10),
-        level: int = 0,
+        level: int = 1,
         score: int = 0,
+        **options: Any,
     ):
-        self.engine = engine
+        self.engine = engine(**options)
         self.seed = seed or secrets.token_bytes()
         if board is None:
             # Internally, we use 2x the height to "buffer" the board being
@@ -126,11 +126,10 @@ class BaseGame:
         else:
             self.board = board
 
-        self.gravity = engine.gravity(self)
-        self.queue = engine.queue(seed=self.seed)
-        self.rs = engine.rs(self.board)
-
-        self.scorer = engine.scorer()
+        self.gravity = self.engine.gravity(self)
+        self.queue = self.engine.queue(self)
+        self.rs = self.engine.rotation_system(self)
+        self.scorer = self.engine.scorer(self)
         self.scorer.level = level
         self.scorer.score = score
 
@@ -229,21 +228,21 @@ class BaseGame:
         return board[-self.height - buffer_lines :]
 
     def reset(self, seed: Optional[Seed] = None, level: int = 0) -> None:
-        """Restart the game, only keeping the `self.engine` instance.
+        """Restart the game, only keeping the `engine` instance.
 
         Parameters
         ----------
         seed : tetris.types.Seed, optional
             The random seed to initialise this with.
         level : int, optional
-            The initial level to set on `tetris.engine.abcs.Scorer`.
+            The initial level to set on `tetris.engine.Scorer`.
         """
         self.seed = seed or secrets.token_bytes()
         self.board[:] = 0
         self.gravity = self.engine.gravity(self)
-        self.queue = self.engine.queue(seed=self.seed)
-        self.rs = self.engine.rs(self.board)
-        self.scorer = self.engine.scorer()
+        self.queue = self.engine.queue(self)
+        self.rs = self.engine.rotation_system(self)
+        self.scorer = self.engine.scorer(self)
         self.scorer.level = level
         self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing

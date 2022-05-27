@@ -31,11 +31,10 @@ A quick glance
 
     >>> import tetris
     >>> game = tetris.BaseGame(board_size=(4, 4), seed=128)
-    >>> game.engine
-    Engine(gravity=InfinityGravity, queue=SevenBag, rs=SRS, scorer=GuidelineScorer)
     >>> game.queue
-    SevenBag([PieceType.J, PieceType.O, PieceType.L, PieceType.I, PieceType.T, PieceType.S, PieceType.J])
+    <SevenBag object [J, O, L, I, T, S, J, ...]>
     >>> for _ in range(4): game.hard_drop()
+    ...
     >>> game.playing
     False
     >>> print(game)
