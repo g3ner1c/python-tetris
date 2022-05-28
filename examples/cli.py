@@ -58,7 +58,7 @@ def main(screen: curses.window) -> None:
     screen.nodelay(True)
 
     def render() -> None:
-        screen.clear()
+        screen.erase()
         my, mx = screen.getmaxyx()
         board = screen.subwin(22, 22, my // 2 - 11, mx // 2 - 22)
         status = screen.subwin(22, 20, my // 2 - 11, 23 + mx // 2 - 22)
@@ -121,7 +121,7 @@ def main(screen: curses.window) -> None:
     def render_help() -> None:
         my, mx = screen.getmaxyx()
         help_menu = screen.subwin(16, 33, my // 2 - 8, mx // 2 - 17)
-        help_menu.clear()
+        help_menu.erase()
         help_menu.addstr(2, 5, "♥ dzshn/python-tetris")
         help_menu.addstr(4, 4, " Controls ", curses.A_STANDOUT)
         for i, line in enumerate(
