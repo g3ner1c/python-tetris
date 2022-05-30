@@ -3,6 +3,7 @@
 [![pypi](https://img.shields.io/pypi/v/tetris?logo=pypi&logoColor=f0f0f0&style=for-the-badge)](https://pypi.org/project/tetris/)
 [![versions](https://img.shields.io/pypi/pyversions/tetris?logo=python&logoColor=f0f0f0&style=for-the-badge)](https://pypi.org/project/tetris/)
 [![build](https://img.shields.io/github/workflow/status/dzshn/python-tetris/Test%20library?logo=github&logoColor=f0f0f0&style=for-the-badge)](https://github.com/dzshn/python-tetris/actions/workflows/test.yml)
+[![docs](https://img.shields.io/readthedocs/python-tetris?style=for-the-badge)](https://python-tetris.readthedocs.io/en/latest/?badge=latest)
 [![technical-debt](https://img.shields.io/badge/contains-technical%20debt-009fef?style=for-the-badge)](https://forthebadge.com/)
 
 ---
