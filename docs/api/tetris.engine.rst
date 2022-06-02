@@ -1,21 +1,7 @@
-tetris.engine package
-=====================
-
-Submodules
-----------
-
-.. toctree::
-   :maxdepth: 4
-
-   tetris.engine.abcs
-   tetris.engine.gravity
-   tetris.engine.queue
-   tetris.engine.rotation
-   tetris.engine.scorer
-
-Module contents
----------------
+tetris.engine module
+====================
 
 .. automodule:: tetris.engine
    :members:
+   :undoc-members:
    :show-inheritance:

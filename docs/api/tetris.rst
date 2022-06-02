@@ -7,7 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   tetris.engine
+   tetris.impl
 
 Submodules
 ----------
@@ -15,6 +15,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   tetris.engine
    tetris.game
    tetris.types
 
@@ -23,4 +24,5 @@ Module contents
 
 .. automodule:: tetris
    :members:
+   :undoc-members:
    :show-inheritance:
