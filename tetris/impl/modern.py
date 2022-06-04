@@ -16,12 +16,18 @@ from tetris.types import PieceType
 if TYPE_CHECKING:
     from tetris import BaseGame
 
+from tetris.impl import gravity
+from tetris.impl import queue
+from tetris.impl import rotation
+from tetris.impl import scorer
+
 __all__ = (
     "InfinityGravity",
     "ModernEngine",
     "SevenBag",
     "SRS",
     "Timer",
+    "Scorer",
 )
 
 KickTable = dict[tuple[int, int], tuple[tuple[int, int], ...]]  # pardon
@@ -374,14 +380,14 @@ class SevenBag(tetris.engine.Queue):
 class ModernEngine(tetris.Engine):
     """Guideline-compliant engine implementation."""
 
-    def queue(self, game: BaseGame) -> SevenBag:  # noqa: D102
-        return SevenBag(seed=game.seed)
+    def queue(self, game: BaseGame) -> queue.SevenBag:  # noqa: D102
+        return queue.SevenBag(seed=game.seed)
 
-    def scorer(self, game: BaseGame) -> Scorer:  # noqa: D102
-        return Scorer()
+    def scorer(self, game: BaseGame) -> scorer.GuidelineScorer:  # noqa: D102
+        return scorer.GuidelineScorer()
 
-    def rotation_system(self, game: BaseGame) -> SRS:  # noqa: D102
-        return SRS(board=game.board)
+    def rotation_system(self, game: BaseGame) -> rotation.SRS:  # noqa: D102
+        return rotation.SRS(board=game.board)
 
-    def gravity(self, game: BaseGame) -> InfinityGravity:  # noqa: D102
-        return InfinityGravity(game=game)
+    def gravity(self, game: BaseGame) -> gravity.InfinityGravity:  # noqa: D102
+        return gravity.InfinityGravity(game=game)
