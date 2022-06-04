@@ -1,6 +1,6 @@
-tetris.impl.modern module
+tetris.impl.scorer module
 =========================
 
-.. automodule:: tetris.impl.modern
+.. automodule:: tetris.impl.scorer
    :members:
    :show-inheritance:

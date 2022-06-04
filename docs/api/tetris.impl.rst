@@ -8,7 +8,11 @@ Submodules
    :maxdepth: 4
 
    tetris.impl.custom
-   tetris.impl.modern
+   tetris.impl.gravity
+   tetris.impl.presets
+   tetris.impl.queue
+   tetris.impl.rotation
+   tetris.impl.scorer
 
 Module contents
 ---------------

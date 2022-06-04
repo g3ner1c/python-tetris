@@ -10,7 +10,10 @@ from tetris.engine import Gravity
 from tetris.engine import Queue
 from tetris.engine import RotationSystem
 from tetris.engine import Scorer
-from tetris.impl import modern
+from tetris.impl.gravity import InfinityGravity
+from tetris.impl.queue import SevenBag
+from tetris.impl.rotation import SRS
+from tetris.impl.scorer import GuidelineScorer
 
 if TYPE_CHECKING:
     from tetris import BaseGame
@@ -19,14 +22,14 @@ if TYPE_CHECKING:
 class CustomEngine(Engine):
     """Mutable engine implementation.
 
-    By default, the parts are taken from `tetris.impl.modern`.
+    By default, the parts are identical to `tetris.impl.presets.ModernEngine`.
 
     Parameters
     ----------
-    gravity : Gravity, default = tetris.impl.modern.InfinityGravity
-    queue : Queue, default = tetris.impl.modern.SevenBag
-    rotation_system : RotationSystem, default = tetris.impl.modern.SRS
-    scorer : Scorer, default = tetris.impl.modern.Scorer
+    gravity : Gravity, default = tetris.impl.gravity.InfinityGravity
+    queue : Queue, default = tetris.impl.queue.SevenBag
+    rotation_system : RotationSystem, default = tetris.impl.rotation.SRS
+    scorer : Scorer, default = tetris.impl.scorer.Scorer
 
     Attributes
     ----------
@@ -53,10 +56,10 @@ class CustomEngine(Engine):
 
     def __init__(
         self,
-        gravity: Gravity = modern.InfinityGravity,
-        queue: Queue = modern.SevenBag,
-        rotation_system: RotationSystem = modern.SRS,
-        scorer: Scorer = modern.Scorer,
+        gravity: Gravity = InfinityGravity,
+        queue: Queue = SevenBag,
+        rotation_system: RotationSystem = SRS,
+        scorer: Scorer = GuidelineScorer,
     ):
         self.parts = {
             "gravity": gravity,

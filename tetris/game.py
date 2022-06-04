@@ -8,7 +8,7 @@ from typing import Any, Optional
 import numpy as np
 
 from tetris.engine import Engine
-from tetris.impl.modern import ModernEngine
+from tetris.impl.presets import ModernEngine
 from tetris.types import Board
 from tetris.types import MinoType
 from tetris.types import Move
@@ -41,7 +41,7 @@ class BaseGame:
 
     Parameters
     ----------
-    engine : tetris.engine.Engine class, default = tetris.impl.ModernEngine
+    engine : tetris.engine.Engine class, default = tetris.impl.presets.ModernEngine
         An engine class, which contains a game's core logic. The default is to
         mimic a modern Tetris game.
     seed : tetris.types.Seed, optional
