@@ -9,7 +9,7 @@ Submodules
 
    tetris.impl.custom
    tetris.impl.gravity
-   tetris.impl.modern
+   tetris.impl.presets
    tetris.impl.queue
    tetris.impl.rotation
    tetris.impl.scorer
