@@ -56,10 +56,10 @@ class CustomEngine(Engine):
 
     def __init__(
         self,
-        gravity: Gravity = gravity.InfinityGravity,
-        queue: Queue = queue.SevenBag,
-        rotation_system: RotationSystem = rotation.SRS,
-        scorer: Scorer = scorer.GuidelineScorer,
+        gravity: Gravity = InfinityGravity,
+        queue: Queue = SevenBag,
+        rotation_system: RotationSystem = SRS,
+        scorer: Scorer = GuidelineScorer,
     ):
         self.parts = {
             "gravity": gravity,
