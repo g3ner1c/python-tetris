@@ -10,10 +10,10 @@ from tetris.engine import Gravity
 from tetris.engine import Queue
 from tetris.engine import RotationSystem
 from tetris.engine import Scorer
-from tetris.impl import gravity
-from tetris.impl import queue
-from tetris.impl import rotation
-from tetris.impl import scorer
+from tetris.impl.gravity import InfinityGravity
+from tetris.impl.queue import SevenBag
+from tetris.impl.rotation import SRS
+from tetris.impl.scorer import GuidelineScorer
 
 if TYPE_CHECKING:
     from tetris import BaseGame
