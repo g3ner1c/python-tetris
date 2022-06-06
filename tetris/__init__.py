@@ -2,6 +2,9 @@
 
 import importlib.metadata
 
+from tetris import engine
+from tetris import game
+from tetris import impl
 from tetris.engine import Engine
 from tetris.game import BaseGame
 from tetris.types import MinoType
@@ -25,6 +28,9 @@ __all__ = (
     "Piece",
     "PieceType",
     "PlayingStatus",
+    "impl",
+    "engine",
+    "game",
 )
 
 del importlib

@@ -9,6 +9,7 @@ import numpy as np
 
 from tetris.engine import Engine
 from tetris.impl.presets import ModernEngine
+from tetris.impl.scorer import NESScorer
 from tetris.types import Board
 from tetris.types import MinoType
 from tetris.types import Move
@@ -112,7 +113,7 @@ class BaseGame:
         seed: Optional[Seed] = None,
         board: Optional[Board] = None,
         board_size: tuple[int, int] = (20, 10),
-        level: int = 1,
+        level: int = 0,
         score: int = 0,
         **options: Any,
     ):
@@ -130,7 +131,18 @@ class BaseGame:
         self.queue = self.engine.queue(self)
         self.rs = self.engine.rotation_system(self)
         self.scorer = self.engine.scorer(self)
-        self.scorer.level = level
+
+        if level < 1:  # correct for negative levels
+            if self.scorer is NESScorer:  # NESScorer starts at level 0
+                self.scorer.start_level = 0
+                self.scorer.level = 0
+            else:
+                self.scorer.start_level = 1
+                self.scorer.level = 1
+        else:
+            self.scorer.start_level = level
+            self.scorer.level = level
+
         self.scorer.score = score
 
         self.piece = self.rs.spawn(self.queue.pop())
@@ -243,6 +255,18 @@ class BaseGame:
         self.queue = self.engine.queue(self)
         self.rs = self.engine.rotation_system(self)
         self.scorer = self.engine.scorer(self)
+
+        if level < 1:
+            if self.scorer is NESScorer:
+                self.scorer.start_level = 0
+                self.scorer.level = 0
+            else:
+                self.scorer.start_level = 1
+                self.scorer.level = 1
+        else:
+            self.scorer.start_level = level
+            self.scorer.level = level
+
         self.scorer.level = level
         self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing

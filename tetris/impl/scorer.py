@@ -22,29 +22,32 @@ class GuidelineScorer(Scorer):
 
     def __init__(self):
         self.score = 0
+        self.start_level = 1
         self.level = 1
         self.line_clears = 0
         self.combo = 0
         self.back_to_back = 0
 
     def judge(self, delta: MoveDelta) -> None:  # noqa: D102
-        if delta.kind == MoveKind.soft_drop:
-            if not delta.auto:
-                self.score += delta.x * self.level
 
-        elif delta.kind == MoveKind.hard_drop:
+        if delta.kind == MoveKind.soft_drop:  # soft drop
+            if not delta.auto:
+                self.score += delta.x
+
+        elif delta.kind == MoveKind.hard_drop:  # hard drop
             score = 0
 
-            if not delta.auto:
-                score += delta.x * self.level * 2
+            if not delta.auto:  # not done by gravity
+                self.score += delta.x * 2
+                # self.score instead because hard drop isn't affected by level
 
             piece = delta.game.piece
             board = delta.game.board
 
-            line_clears = len(delta.clears)
+            line_clears = len(delta.clears)  # how many lines cleared
             tspin = False
             tspin_mini = False
-            if piece.type == PieceType.T and delta.r:
+            if piece.type == PieceType.T and delta.r:  # t-spin case
                 x = piece.x
                 y = piece.y
                 mx, my = board.shape
@@ -72,7 +75,7 @@ class GuidelineScorer(Scorer):
 
                 # fmt: on
 
-            if line_clears:
+            if line_clears:  # B2B and combo
                 if tspin or tspin_mini or line_clears >= 4:
                     self.back_to_back += 1
                 else:
@@ -107,5 +110,51 @@ class GuidelineScorer(Scorer):
 
             self.score += score
             self.line_clears += line_clears
-            if line_clears and self.line_clears % 10 == 0:
+
+            if self.level < self.line_clears // 10 + 1:
+                self.level += 1
+
+
+class NESScorer(Scorer):
+    """The NES scoring system.
+
+    Notes
+    -----
+    This class implements the orginal scoring system found in the Nintendo NES
+    Tetris games.
+
+    A more thorough explanation can be found at <https://tetris.wiki/Scoring>.
+    """
+
+    def __init__(self) -> None:
+        self.score = 0
+        self.start_level = 0
+        self.level = 0  # NES starts on level 0
+        self.line_clears = 0
+
+    def judge(self, delta: MoveDelta) -> None:  # noqa: D102
+
+        if delta.kind == MoveKind.soft_drop:  # soft drop
+            if not delta.auto:
+                self.score += delta.x
+
+        elif delta.kind == MoveKind.hard_drop:
+            # NRS doesn't have hard drop score bonus but added anyways for
+            # comptability and modularity with other rotation systems
+            if not delta.auto:
+                self.score += delta.x
+            score = 0
+            line_clears = len(delta.clears)
+
+            score += [0, 40, 100, 300, 1200][line_clears]
+            score *= self.level + 1
+
+            self.score += score
+            self.line_clears += line_clears
+
+            if (
+                self.line_clears
+                > min(self.start_level * 10 + 10, max(100, self.start_level * 10 - 50))
+                + (self.level - self.start_level) * 10
+            ):
                 self.level += 1

@@ -142,13 +142,18 @@ class Queue(abc.ABC, Sequence):
     """
 
     def __init__(
-        self, pieces: Optional[Iterable[int]] = None, seed: Optional[Seed] = None
+        self,
+        pieces: Optional[Iterable[int]] = None,
+        seed: Optional[Seed] = None,
+        refill: int = 7,
     ):
         seed = seed or secrets.token_bytes()
         self._seed = seed
         self._random = random.Random(seed)
         self._pieces = [PieceType(i) for i in pieces or []]
-        if len(self._pieces) <= 7:
+        self._refill = refill
+        while len(self._pieces) <= self._refill:
+            # while instead of if for queue methods that call one piece at a time
             self.fill()
 
     @classmethod
@@ -158,7 +163,7 @@ class Queue(abc.ABC, Sequence):
 
     def pop(self) -> PieceType:
         """Remove and return the first piece of the queue."""
-        if len(self._pieces) <= 7:
+        while len(self._pieces) <= self._refill:
             self.fill()
 
         return self._pieces.pop(0)
@@ -311,11 +316,15 @@ class Scorer(abc.ABC):
     """
 
     score: int
+    start_level: int  # starting level can affect diffrent scoring systems
     level: int
+    line_clears: int
 
     def __init__(self) -> None:
         self.score = 0
+        self.start_level = 1
         self.level = 1
+        self.line_clears = 0
 
     @classmethod
     def from_game(cls, game: BaseGame) -> Scorer:
