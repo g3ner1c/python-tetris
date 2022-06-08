@@ -267,7 +267,6 @@ class BaseGame:
             self.scorer.start_level = level
             self.scorer.level = level
 
-        self.scorer.level = level
         self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing
         self.delta = None
