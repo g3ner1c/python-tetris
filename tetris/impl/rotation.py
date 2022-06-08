@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import ClassVar, Union
+from typing import ClassVar, Optional
 
 from tetris.engine import RotationSystem
 from tetris.types import Board
@@ -18,13 +18,13 @@ KickTable = dict[tuple[int, int], tuple[tuple[int, int], ...]]  # pardon
 
 
 def convert_coords(
-    coords: tuple[int, int], board: Union[Board, None] = None
+    coords: tuple[int, int], board: Optional[Board] = None
 ) -> tuple[int, int]:
     """Convert a conventional coordinate to a coordinate used by this library.
 
-    This is a function for converting from conventional to
-    internal coordinates meant to help with implementing rotation systems, as
-    well as a general utility function.
+    This is a function for converting from conventional to internal coordinates
+    meant to help with implementing rotation systems, as well as a general
+    utility function.
 
     Parameters
     ----------
@@ -43,12 +43,12 @@ def convert_coords(
 
     Notes
     -----
-    Indexing starts at 0, so the top-left corner (`(0, 39)` on a 10x40 board, aka
-    `Board(40, 10)`) is `(0, 0)` when converted.
+    Indexing starts at 0, so the top-left corner (e.g. `(0, 39)` on a 10x40
+    board) is `(0, 0)` when converted.
 
     Examples
     --------
-    >>> tetris.impl.rotation.convert_coords((3, 2), Board((40, 10)))
+    >>> tetris.impl.rotation.convert_coords((3, 2), game.board)
     (37, 3)
     >>> tetris.impl.rotation.convert_coords((-1, 2))
     (-2, -1)
@@ -190,8 +190,8 @@ class SRS(RotationSystem):
             ((0, 1), (0, 2), (1, 1), (1, 2)),
             ((0, 1), (0, 2), (1, 1), (1, 2)),
             # nothing happens lol
-            #    [][]
-            #    [][]
+            #    . [][].
+            #    . [][].
         ],
     }
 
