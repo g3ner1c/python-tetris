@@ -41,7 +41,7 @@ jobs:
               run: pip3 install tox
 
             - name: Generate apidoc
-              run: tox -e docs
+              run: tox -e apidocs
 
             - name: Check if repo apidoc is up to date
               run: |
