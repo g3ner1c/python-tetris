@@ -2,14 +2,60 @@
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 from tetris.engine import RotationSystem
+from tetris.types import Board
 from tetris.types import Minos
 from tetris.types import Piece
 from tetris.types import PieceType
 
 KickTable = dict[tuple[int, int], tuple[tuple[int, int], ...]]  # pardon
+
+# Note: the x and y axes are switched from the usual convention,
+# and the x axis (vertical) is inverted to start from top-to-bottom.
+# This is because arrays are indexed from the top-to-bottom, left-to-right.
+
+
+def convert_coords(
+    coords: tuple[int, int], board: Optional[Board] = None
+) -> tuple[int, int]:
+    """Convert a conventional coordinate to a coordinate used by this library.
+
+    This is a function for converting from conventional to internal coordinates
+    meant to help with implementing rotation systems, as well as a general
+    utility function.
+
+    Parameters
+    ----------
+    coords : tuple[int, int]
+        The conventional (x, y) coordinate.
+    board : tetris.types.Board or None, default = None
+        The board this coordinate is relative to.
+
+        Set to `None` to convert kick table coordinates and coordinates
+        relative to a piece position.`
+
+    Returns
+    -------
+    tuple[int, int]
+        The converted internal coordinate.
+
+    Notes
+    -----
+    Indexing starts at 0, so the top-left corner (e.g. `(0, 39)` on a 10x40
+    board) is `(0, 0)` when converted.
+
+    Examples
+    --------
+    >>> tetris.impl.rotation.convert_coords((3, 2), game.board)
+    (37, 3)
+    >>> tetris.impl.rotation.convert_coords((-1, 2))
+    (-2, -1)
+    """
+    if board is None:
+        return (-coords[1], coords[0])
+    return (board.shape[0] - coords[1] - 1, coords[0])
 
 
 class SRS(RotationSystem):
