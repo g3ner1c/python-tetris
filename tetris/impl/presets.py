@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tetris import Engine
+from tetris.engine import Engine
 
 if TYPE_CHECKING:
     from tetris import BaseGame

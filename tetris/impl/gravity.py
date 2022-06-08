@@ -68,7 +68,7 @@ class InfinityGravity(Gravity):
     """
 
     def __init__(self, game: BaseGame):
-        self.game = game
+        super().__init__(game)
 
         self.idle_lock = Timer(milliseconds=500)
         self.lock_resets = 0
