@@ -8,14 +8,15 @@ import secrets
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import Optional, overload, TYPE_CHECKING
+from typing import Any, Optional, overload, TYPE_CHECKING
 
 from tetris.types import Board
 from tetris.types import Minos
 from tetris.types import MoveDelta
 from tetris.types import Piece
 from tetris.types import PieceType
-from tetris.types import Seed, Ruleset
+from tetris.types import Ruleset
+from tetris.types import Seed
 
 if TYPE_CHECKING:
     from tetris import BaseGame
@@ -119,7 +120,7 @@ class Gravity(EnginePart):
         ...
 
 
-class Queue(EnginePart):
+class Queue(EnginePart, Sequence):
     """Abstract base class for queue implementations.
 
     This class extends `collections.abc.Sequence` and consists of `PieceType`
