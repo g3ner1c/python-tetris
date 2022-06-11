@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 import enum
+import keyword
 import sys
 from collections.abc import Iterable
-from typing import final, Optional, TYPE_CHECKING, Union
+from typing import Any, final, Optional, TYPE_CHECKING, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -24,6 +25,70 @@ if sys.version_info > (3, 10):
 Board = NDArray[np.int8]
 Minos = Iterable[tuple[int, int]]
 Seed = Union[str, bytes, int]
+
+
+@final
+@dataclasses.dataclass
+class Rule:
+    name: str
+    type: type
+    default: Any
+
+    def __post_init__(self):
+        self.value: Any = self.default
+
+
+@final
+class Ruleset:
+    def __init__(
+        self,
+        rules: Iterable[Rule],
+        overrides: Iterable[dict[str, Any]] = (),
+    ):
+        self._rules: dict[str, Rule]
+        object.__setattr__(self, "_rules", {})  # avoid RecursionError
+
+        for rule in rules:
+            if (
+                keyword.iskeyword(rule.name)
+                or not rule.name.isidentifier()
+                or hasattr(self, rule.name)
+            ):
+                raise ValueError(f"{rule} has invalid or reserved keyword.")
+
+            self._rules[rule.name] = rule
+
+        for override in overrides:
+            for rule, value in override.items():
+                try:
+                    self._rules[rule].value = value
+
+                except KeyError:
+                    pass
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self._rules[name].value
+
+        except KeyError:
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no rule or attribute {name}"
+            ) from None
+
+    def __setattr__(self, name: str, value: Any) -> Any:
+        if name in self._rules:
+            rule = self._rules[name]
+            if not isinstance(value, rule.type):
+                raise TypeError(f"{value} has incompatible type for {rule}")
+
+            rule.value = value
+
+        else:
+            object.__setattr__(self, name, value)
+
+    def __dir__(self) -> Iterable[str]:
+        yield from object.__dir__(self)
+        yield from self._rules.keys()
 
 
 class PlayingStatus(enum.Enum):

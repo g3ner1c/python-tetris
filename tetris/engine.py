@@ -15,7 +15,7 @@ from tetris.types import Minos
 from tetris.types import MoveDelta
 from tetris.types import Piece
 from tetris.types import PieceType
-from tetris.types import Seed
+from tetris.types import Seed, Ruleset
 
 if TYPE_CHECKING:
     from tetris import BaseGame
@@ -81,7 +81,12 @@ class Engine(abc.ABC):
         ...
 
 
-class Gravity(abc.ABC):
+class EnginePart(abc.ABC):
+    ruleset: Ruleset = Ruleset([])
+    rule_overrides: dict[str, Any] = {}
+
+
+class Gravity(EnginePart):
     """Abstract base class for gravity implementations.
 
     Parameters
@@ -114,7 +119,7 @@ class Gravity(abc.ABC):
         ...
 
 
-class Queue(abc.ABC, Sequence):
+class Queue(EnginePart):
     """Abstract base class for queue implementations.
 
     This class extends `collections.abc.Sequence` and consists of `PieceType`
@@ -205,7 +210,7 @@ class Queue(abc.ABC, Sequence):
         )
 
 
-class RotationSystem(abc.ABC):
+class RotationSystem(EnginePart):
     """Abstract base class for rotation systems.
 
     Parameters
@@ -299,7 +304,7 @@ class RotationSystem(abc.ABC):
         return False
 
 
-class Scorer(abc.ABC):
+class Scorer(EnginePart):
     """Abstract base class for score systems.
 
     Attributes
