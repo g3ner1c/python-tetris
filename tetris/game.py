@@ -67,6 +67,8 @@ class BaseGame:
         Mapping of rule names to overriden values.
 
         .. seealso:: `Ruleset`, `Rule`
+    **options : dict, optional
+        Extra arguments to pass to `engine`.
 
     Attributes
     ----------
@@ -108,8 +110,6 @@ class BaseGame:
     paused : bool
     lost : bool
     playfield : Board
-    **options : dict, optional
-        Extra arguments to pass to `engine`.
     """
 
     def __init__(
