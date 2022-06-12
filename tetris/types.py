@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 import enum
+import keyword
 import sys
 from collections.abc import Iterable
-from typing import final, Optional, TYPE_CHECKING, Union
+from typing import Any, final, Optional, TYPE_CHECKING, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -24,6 +25,147 @@ if sys.version_info > (3, 10):
 Board = NDArray[np.int8]
 Minos = Iterable[tuple[int, int]]
 Seed = Union[str, bytes, int]
+
+
+@final
+@dataclasses.dataclass
+class Rule:
+    """Object representing a `Ruleset` rule.
+
+    Attributes
+    ----------
+    name : str
+        The name of the rule. This is accessed from `Ruleset` as an attribute.
+    type : type
+        The accepted type for this rule.
+
+        .. hint::
+            This is checked using `isinstance` and is thus limited to what
+            comparisons it supports.
+    default : Any
+        The default value for this rule.
+    value : Any
+        The current value for this rule.
+
+        .. warning::
+            Trying to update this to an unmatching type will raise `TypeError`.
+
+    Raises
+    ------
+    TypeError
+        The provided default did not match the provided type.
+    """
+
+    name: str
+    type: type
+    default: Any
+
+    def __post_init__(self):
+        self.value: Any = self.default
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == "value" and not isinstance(value, self.type):
+            raise TypeError(f"{value} has incompatible type for {self}")
+
+        object.__setattr__(self, name, value)
+
+
+@final
+class Ruleset:
+    """Namespace object for rules.
+
+    Parameters
+    ----------
+    rules : Iterable[Rule]
+        The rules for this ruleset.
+    name: str, optional
+        The name of this ruleset. It must always be set in sub-rulesets and
+        corresponds to a prefix in the parent ruleset.
+    """
+
+    def __init__(self, *rules: Rule, name: Optional[str] = None):
+        self._rules: dict[str, Rule]
+        object.__setattr__(self, "_rules", {})  # avoid RecursionError
+
+        for rule in rules:
+            if not self._is_valid_attribute(rule.name):
+                raise ValueError(f"{rule} is not a valid attribute.")
+
+            self._rules[rule.name] = rule
+
+        self._name = name
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self._rules[name].value
+
+        except KeyError:
+            raise AttributeError(
+                f"Ruleset object has no rule or attribute {name}"
+            ) from None
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in self._rules:
+            self._rules[name].value = value
+
+        else:
+            object.__setattr__(self, name, value)
+
+    def override(self, overrides: dict[str, Any]) -> None:
+        """Update this ruleset's values (usually from an override).
+
+        Parameters
+        ----------
+        overrides : dict[str, Any]
+            Mapping of rule names to new values.
+        """
+        for name, value in overrides.items():
+            try:
+                self._rules[name].value = value
+
+            except KeyError:
+                pass
+
+    def register(self, ruleset: Ruleset) -> None:
+        """Register a new (sub-)ruleset.
+
+        It's rules will be prefixed with it's name.
+
+        Parameters
+        ----------
+        ruleset : Ruleset
+            The ruleset to register. Must have a name set.
+
+        Raises
+        ------
+        ValueError
+            The provided ruleset was unnamed.
+        RuntimeError
+            A conflicting rule name was found.
+        """
+        if not ruleset._name:
+            raise ValueError(f"Attempted registering unnamed Ruleset: {ruleset}")
+
+        prefix = ruleset._name + "_"
+        for rule in ruleset._rules.values():
+            new_name = prefix + rule.name
+            if new_name in self._rules:
+                raise RuntimeError(
+                    f"Found conflicting rule names! {rule}, {self._rules[new_name]}"
+                )
+
+            self._rules[new_name] = rule
+
+    def _is_valid_attribute(self, name: str) -> bool:
+        return (
+            name.isidentifier()
+            and not keyword.iskeyword(name)
+            and not hasattr(self, name)
+        )
+
+    def __dir__(self) -> Iterable[str]:
+        yield from object.__dir__(self)
+        yield from self._rules.keys()
 
 
 class PlayingStatus(enum.Enum):

@@ -17,6 +17,8 @@ from tetris.types import MoveKind
 from tetris.types import PartialMove
 from tetris.types import PieceType
 from tetris.types import PlayingStatus
+from tetris.types import Rule
+from tetris.types import Ruleset
 from tetris.types import Seed
 
 _default_tiles = {
@@ -61,6 +63,10 @@ class BaseGame:
         The inital level to set on `tetris.engine.Scorer`.
     score : int, default = 0
         The inital score to set on `tetris.engine.Scorer`.
+    rule_overrides : dict[str, Any], optional
+        Mapping of rule names to overriden values.
+
+        .. seealso:: `Ruleset`, `Rule`
 
     Attributes
     ----------
@@ -114,6 +120,7 @@ class BaseGame:
         board_size: tuple[int, int] = (20, 10),
         level: int = 1,
         score: int = 0,
+        rule_overrides: dict[str, Any] = {},
         **options: Any,
     ):
         self.engine = engine(**options)
@@ -130,7 +137,19 @@ class BaseGame:
         self.queue = self.engine.queue(self)
         self.rs = self.engine.rotation_system(self)
         self.scorer = self.engine.scorer(self)
-        self.scorer.level = level
+
+        self.rules = Ruleset(
+            Rule("initial_level", int, 1),
+        )
+        for part in (self.gravity, self.queue, self.rs, self.scorer):
+            if override := getattr(part, "rule_overrides", None):
+                self.rules.override(override)
+
+            self.rules.register(getattr(part, "rules", Ruleset()))
+
+        self.rules.override(rule_overrides)
+
+        self.scorer.level = self.rules.initial_level
         self.scorer.score = score
 
         self.piece = self.rs.spawn(self.queue.pop())

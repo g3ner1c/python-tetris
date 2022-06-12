@@ -8,17 +8,20 @@ import secrets
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import Optional, overload, TYPE_CHECKING
+from typing import Any, Optional, overload, TYPE_CHECKING
 
 from tetris.types import Board
 from tetris.types import Minos
 from tetris.types import MoveDelta
 from tetris.types import Piece
 from tetris.types import PieceType
+from tetris.types import Ruleset
 from tetris.types import Seed
 
 if TYPE_CHECKING:
     from tetris import BaseGame
+
+Self = Any  # Only in 3.11
 
 __all__ = (
     "Engine",
@@ -81,7 +84,32 @@ class Engine(abc.ABC):
         ...
 
 
-class Gravity(abc.ABC):
+class EnginePart(abc.ABC):
+    """Base API for `Engine` parts.
+
+    Attributes
+    ----------
+    rules : Ruleset
+        Defines rules for this specific object. *Must* have a name set.
+    rule_overrides : dict[str, Any]
+        Mapping of rule names to overriden values.
+
+    Notes
+    -----
+    `rules` and `rule_overrides` are optional and may be left undefined, or be
+    set to `None`.
+    """
+
+    rules: Optional[Ruleset]
+    rule_overrides: Optional[dict[str, Any]]
+
+    @classmethod
+    @abc.abstractmethod
+    def from_game(cls, game: BaseGame) -> Self:
+        ...
+
+
+class Gravity(EnginePart):
     """Abstract base class for gravity implementations.
 
     Parameters
@@ -114,7 +142,7 @@ class Gravity(abc.ABC):
         ...
 
 
-class Queue(abc.ABC, Sequence):
+class Queue(EnginePart, Sequence):
     """Abstract base class for queue implementations.
 
     This class extends `collections.abc.Sequence` and consists of `PieceType`
@@ -205,7 +233,7 @@ class Queue(abc.ABC, Sequence):
         )
 
 
-class RotationSystem(abc.ABC):
+class RotationSystem(EnginePart):
     """Abstract base class for rotation systems.
 
     Parameters
@@ -299,7 +327,7 @@ class RotationSystem(abc.ABC):
         return False
 
 
-class Scorer(abc.ABC):
+class Scorer(EnginePart):
     """Abstract base class for score systems.
 
     Attributes
