@@ -21,6 +21,8 @@ from tetris.types import Seed
 if TYPE_CHECKING:
     from tetris import BaseGame
 
+Self = Any  # Only in 3.11
+
 __all__ = (
     "Engine",
     "Gravity",
@@ -85,6 +87,11 @@ class Engine(abc.ABC):
 class EnginePart(abc.ABC):
     ruleset: Ruleset = Ruleset([])
     rule_overrides: dict[str, Any] = {}
+
+    @classmethod
+    @abc.abstractmethod
+    def from_game(cls, game: BaseGame) -> Self:
+        ...
 
 
 class Gravity(EnginePart):
