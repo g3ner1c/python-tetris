@@ -30,6 +30,20 @@ Seed = Union[str, bytes, int]
 @final
 @dataclasses.dataclass
 class Rule:
+    """Object representing a `Ruleset` rule.
+
+    Attributes
+    ----------
+    name : str
+        The name of the rule. This is accessed from `Ruleset` as an attribute.
+    type : type
+        The accepted type for this rule.
+    default : Any
+        The default value for this rule.
+    value : Any
+        The current value for this rule.
+    """
+
     name: str
     type: type
     default: Any
@@ -40,6 +54,17 @@ class Rule:
 
 @final
 class Ruleset:
+    """Namespace object for rules.
+
+    Parameters
+    ----------
+    rules : Iterable[Rule]
+        The rules for this ruleset.
+    overrides: Iterable[dict[str, Any]], default = ()
+        The initial overrides for the rule's values. If a rule doesn't yet
+        exist, setting it's value will be skipped.
+    """
+
     def __init__(
         self,
         rules: Iterable[Rule],
@@ -59,9 +84,9 @@ class Ruleset:
             self._rules[rule.name] = rule
 
         for override in overrides:
-            for rule, value in override.items():
+            for name, value in override.items():
                 try:
-                    self._rules[rule].value = value
+                    self._rules[name].value = value
 
                 except KeyError:
                     pass
