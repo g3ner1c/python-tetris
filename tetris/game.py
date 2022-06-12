@@ -63,6 +63,10 @@ class BaseGame:
         The inital level to set on `tetris.engine.Scorer`.
     score : int, default = 0
         The inital score to set on `tetris.engine.Scorer`.
+    rule_overrides : dict[str, Any], optional
+        Mapping of rule names to overriden values.
+
+        .. seealso:: `Ruleset`, `Rule`
 
     Attributes
     ----------

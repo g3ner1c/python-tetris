@@ -38,10 +38,22 @@ class Rule:
         The name of the rule. This is accessed from `Ruleset` as an attribute.
     type : type
         The accepted type for this rule.
+
+        .. hint::
+            This is checked using `isinstance` and is thus limited to what
+            comparisons it supports.
     default : Any
         The default value for this rule.
     value : Any
         The current value for this rule.
+
+        .. warning::
+            Trying to update this to an unmatching type will raise `TypeError`.
+
+    Raises
+    ------
+    TypeError
+        The provided default did not match the provided type.
     """
 
     name: str
@@ -66,9 +78,9 @@ class Ruleset:
     ----------
     rules : Iterable[Rule]
         The rules for this ruleset.
-    overrides: Iterable[dict[str, Any]], default = ()
-        The initial overrides for the rule's values. If a rule doesn't yet
-        exist, setting it's value will be skipped.
+    name: str, optional
+        The name of this ruleset. It must always be set in sub-rulesets and
+        corresponds to a prefix in the parent ruleset.
     """
 
     def __init__(self, *rules: Rule, name: Optional[str] = None):

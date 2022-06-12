@@ -85,6 +85,21 @@ class Engine(abc.ABC):
 
 
 class EnginePart(abc.ABC):
+    """Base API for `Engine` parts.
+
+    Attributes
+    ----------
+    rules : Ruleset
+        Defines rules for this specific object. *Must* have a name set.
+    rule_overrides : dict[str, Any]
+        Mapping of rule names to overriden values.
+
+    Notes
+    -----
+    `rules` and `rule_overrides` are optional and may be left undefined, or be
+    set to `None`.
+    """
+
     rules: Optional[Ruleset]
     rule_overrides: Optional[dict[str, Any]]
 
