@@ -141,7 +141,7 @@ class BaseGame:
             if override := getattr(part, "rule_overrides", None):
                 self.rules.override(override)
 
-            self.rules.register(getattr(part, "ruleset", Ruleset()))
+            self.rules.register(getattr(part, "rules", Ruleset()))
 
         self.rules.override(rule_overrides)
 

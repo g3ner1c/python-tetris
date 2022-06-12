@@ -85,7 +85,7 @@ class Engine(abc.ABC):
 
 
 class EnginePart(abc.ABC):
-    ruleset: Optional[Ruleset]
+    rules: Optional[Ruleset]
     rule_overrides: Optional[dict[str, Any]]
 
     @classmethod
