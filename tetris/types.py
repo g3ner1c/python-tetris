@@ -51,6 +51,12 @@ class Rule:
     def __post_init__(self):
         self.value: Any = self.default
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == "value" and not isinstance(value, self.type):
+            raise TypeError(f"{value} has incompatible type for {self}")
+
+        object.__setattr__(self, name, value)
+
 
 @final
 class Ruleset:
@@ -65,31 +71,17 @@ class Ruleset:
         exist, setting it's value will be skipped.
     """
 
-    def __init__(
-        self,
-        rules: Iterable[Rule],
-        overrides: Iterable[dict[str, Any]] = (),
-    ):
+    def __init__(self, *rules: Rule, name: Optional[str] = None):
         self._rules: dict[str, Rule]
         object.__setattr__(self, "_rules", {})  # avoid RecursionError
 
         for rule in rules:
-            if (
-                keyword.iskeyword(rule.name)
-                or not rule.name.isidentifier()
-                or hasattr(self, rule.name)
-            ):
-                raise ValueError(f"{rule} has invalid or reserved keyword.")
+            if not self._is_valid_attribute(rule.name):
+                raise ValueError(f"{rule} is not a valid attribute.")
 
             self._rules[rule.name] = rule
 
-        for override in overrides:
-            for name, value in override.items():
-                try:
-                    self._rules[name].value = value
-
-                except KeyError:
-                    pass
+        self._name = name
 
     def __getattr__(self, name: str) -> Any:
         try:
@@ -97,19 +89,67 @@ class Ruleset:
 
         except KeyError:
             raise AttributeError(
-                f"'{self.__class__.__name__}' object has no rule or attribute {name}"
+                f"Ruleset object has no rule or attribute {name}"
             ) from None
 
-    def __setattr__(self, name: str, value: Any) -> Any:
+    def __setattr__(self, name: str, value: Any) -> None:
         if name in self._rules:
-            rule = self._rules[name]
-            if not isinstance(value, rule.type):
-                raise TypeError(f"{value} has incompatible type for {rule}")
-
-            rule.value = value
+            self._rules[name].value = value
 
         else:
             object.__setattr__(self, name, value)
+
+    def override(self, overrides: dict[str, Any]) -> None:
+        """Update this ruleset's values (usually from an override).
+
+        Parameters
+        ----------
+        overrides : dict[str, Any]
+            Mapping of rule names to new values.
+        """
+        for name, value in overrides.items():
+            try:
+                self._rules[name].value = value
+
+            except KeyError:
+                pass
+
+    def register(self, ruleset: Ruleset) -> None:
+        """Register a new (sub-)ruleset.
+
+        It's rules will be prefixed with it's name.
+
+        Parameters
+        ----------
+        ruleset : Ruleset
+            The ruleset to register. Must have a name set.
+
+        Raises
+        ------
+        ValueError
+            The provided ruleset was unnamed.
+        RuntimeError
+            A conflicting rule name was found.
+        """
+        if not ruleset._name:
+            raise ValueError(f"Attempted registering unnamed Ruleset: {ruleset}")
+
+        prefix = ruleset._name + "_"
+        for rule in ruleset._rules.values():
+            new_name = prefix + rule.name
+            if new_name in self._rules:
+                raise RuntimeError(
+                    f"Found conflicting rule names! {rule}, {self._rules[new_name]}"
+                )
+
+            self._rules[new_name] = rule
+
+    def _is_valid_attribute(self, name: str) -> bool:
+        return (
+            name.isidentifier()
+            and not keyword.iskeyword(name)
+            and not hasattr(self, name)
+        )
 
     def __dir__(self) -> Iterable[str]:
         yield from object.__dir__(self)

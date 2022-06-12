@@ -133,19 +133,18 @@ class BaseGame:
         self.queue = self.engine.queue(self)
         self.rs = self.engine.rotation_system(self)
         self.scorer = self.engine.scorer(self)
+
         self.rules = Ruleset(
-            rules=(
-                Rule("initial_level", int, 1),
-                # ...
-            ),
-            overrides=(
-                self.gravity.rule_overrides,
-                self.queue.rule_overrides,
-                self.rs.rule_overrides,
-                self.scorer.rule_overrides,
-                rule_overrides,
-            ),
+            Rule("initial_level", int, 1),
         )
+        for part in (self.gravity, self.queue, self.rs, self.scorer):
+            if override := getattr(part, "rule_overrides", None):
+                self.rules.override(override)
+
+            self.rules.register(getattr(part, "ruleset", Ruleset()))
+
+        self.rules.override(rule_overrides)
+
         self.scorer.level = self.rules.initial_level
         self.scorer.score = score
 
