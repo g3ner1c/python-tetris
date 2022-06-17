@@ -21,19 +21,6 @@ from tetris.types import Rule
 from tetris.types import Ruleset
 from tetris.types import Seed
 
-_default_tiles = {
-    MinoType.EMPTY: " ",
-    MinoType.I: "I",
-    MinoType.J: "J",
-    MinoType.L: "L",
-    MinoType.O: "O",
-    MinoType.S: "S",
-    MinoType.T: "T",
-    MinoType.Z: "Z",
-    MinoType.GHOST: "@",
-    MinoType.GARBAGE: "X",
-}
-
 
 class BaseGame:
     """Base class for tetris games.
@@ -373,71 +360,6 @@ class BaseGame:
         self.delta.x = x - self.piece.x
         self.delta.y = y - self.piece.y
         self.delta.r = r - self.piece.r
-
-    def render(
-        self,
-        tiles: Optional[dict[MinoType, str]] = None,
-        lines: Optional[int] = None,
-    ) -> str:
-        """Render the `board` to a string.
-
-        This method also takes care of visual clues: the ghost piece and the
-        (not locked) piece itself.
-
-        .. deprecated:: 0.6.0
-            Will be removed before 1.0.0. Use the `get_playfield` method or the
-            `playfield` property instead.
-
-        Parameters
-        ----------
-        tiles : `tetris.MinoType` to str mapping, optional
-            A mapping with the corresponding text for the minos.
-        lines : int, optional
-            Amount of lines to render. Optional, defaults to `height`.
-
-        Returns
-        -------
-        str
-            The rendered board
-
-        Examples
-        --------
-        >>> ...
-        >>> tiles = {i: "[]" for i in tetris.MinoType}
-        >>> tiles.update({tetris.MinoType.EMPTY: "  ", tetris.MinoType.GHOST: "@ "})
-        >>> print(game.render(tiles=tiles, lines=10))
-        <BLANKLINE>
-        <BLANKLINE>
-        @
-        @ @ [][]
-        @     [][][]      []
-        [][]  [][][][][][][]
-        []    [][][][][][][]
-        []      [][][][][][]
-        [][]  [][][][][][][]
-        [][]  [][][][][][][]
-        """
-        if lines is None:
-            lines = self.height
-
-        if tiles is None:
-            tiles = _default_tiles
-
-        board = self.board.copy()
-        piece = self.piece
-        ghost_x = piece.x
-
-        for x in range(piece.x + 1, board.shape[0]):
-            if self.rs.overlaps(minos=piece.minos, px=x, py=piece.y):
-                break
-
-            ghost_x = x
-
-        for x, y in piece.minos:
-            board[x + ghost_x, y + piece.y] = 8
-            board[x + piece.x, y + piece.y] = piece.type
-
-        return "\n".join("".join(tiles[j] for j in i) for i in board[-lines:])
 
     def push(self, move: PartialMove) -> None:
         """Push a move into the game.
