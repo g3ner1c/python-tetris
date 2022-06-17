@@ -146,17 +146,31 @@ class Queue(EnginePart, Sequence):
     """Abstract base class for queue implementations.
 
     This class extends `collections.abc.Sequence` and consists of `PieceType`
-    values. The length is always 7.
+    values.
+
+    Parameters
+    ----------
+    pieces : Iterable[int], optional
+        The pieces to initialise this queue with.
+    seed : Seed, optional
+        The seed used to generate the pieces. Defaults to
+        `secrets.token_bytes()`.
 
     Notes
     -----
-    This class provides a `pop` method to remove and return the *first* piece
-    in the queue.
+    Although this class is not a `collections.abc.MutableSequence`, it provides
+    a `pop` method to remove and return the first piece in the queue, and to
+    automatically refill itself if necessary.
 
-    For subclassing, you are expected to use the `_random` attribute (a
-    `random.Random` object) and update `_pieces` (a list of `tetris.PieceType`
-    which should have a length of *at least* 7). Usually, the only method that
-    needs to be overrided is `fill`.
+    When subclassing, you usually only need to override `fill`. This method
+    is expected to unconditionally append at least one `PieceType` to
+    `_pieces`. This method will be called when the minimum amount of pieces is
+    exhausted (on `BaseGame`, it's by default 4). `_pieces` is a list of
+    `PieceType`, and `_random` is a `random.Random` instance using the game's
+    seed.
+
+    `RuntimeError` will be raised if `fill` does not increase the length of
+    `_pieces`.
 
     Examples
     --------
@@ -176,7 +190,7 @@ class Queue(EnginePart, Sequence):
         self._seed = seed
         self._random = random.Random(seed)
         self._pieces = [PieceType(i) for i in pieces or []]
-        self._size = 7
+        self._size = 7  # May be changed by a game class
         self._safe_fill()
 
     def _safe_fill(self):
@@ -229,7 +243,7 @@ class Queue(EnginePart, Sequence):
         ...
 
     def __getitem__(self, i):
-        return self._pieces[:self._size][i]
+        return self._pieces[: self._size][i]
 
     def __len__(self) -> int:
         return self._size
