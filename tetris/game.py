@@ -59,8 +59,9 @@ class BaseGame:
     board_size : tuple[int, int], default = (20, 10)
         An integer tuple for the height/width of the (visible) board. This is
         ignored if a board is provided.
-    level : int, default = 0
-        The inital level to set on `tetris.engine.Scorer`.
+    level : int, optional
+        The inital level to set on `tetris.engine.Scorer`. Optional, defaults
+        to using `rules.initial_level`
     score : int, default = 0
         The inital score to set on `tetris.engine.Scorer`.
     rule_overrides : dict[str, Any], optional
@@ -118,7 +119,7 @@ class BaseGame:
         seed: Optional[Seed] = None,
         board: Optional[Board] = None,
         board_size: tuple[int, int] = (20, 10),
-        level: int = 1,
+        level: Optional[int] = None,
         score: int = 0,
         rule_overrides: dict[str, Any] = {},
         **options: Any,
@@ -150,7 +151,11 @@ class BaseGame:
 
         self.rules.override(rule_overrides)
 
-        self.scorer.level = self.rules.initial_level
+        if level is None:
+            self.scorer.level = self.rules.initial_level
+        else:
+            self.scorer.level = level
+
         self.scorer.score = score
 
         self.piece = self.rs.spawn(self.queue.pop())
