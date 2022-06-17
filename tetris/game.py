@@ -22,19 +22,6 @@ from tetris.types import Rule
 from tetris.types import Ruleset
 from tetris.types import Seed
 
-_default_tiles = {
-    MinoType.EMPTY: " ",
-    MinoType.I: "I",
-    MinoType.J: "J",
-    MinoType.L: "L",
-    MinoType.O: "O",
-    MinoType.S: "S",
-    MinoType.T: "T",
-    MinoType.Z: "Z",
-    MinoType.GHOST: "@",
-    MinoType.GARBAGE: "X",
-}
-
 
 class BaseGame:
     """Base class for tetris games.
@@ -60,8 +47,9 @@ class BaseGame:
     board_size : tuple[int, int], default = (20, 10)
         An integer tuple for the height/width of the (visible) board. This is
         ignored if a board is provided.
-    level : int, default = 0
-        The inital level to set on `tetris.engine.Scorer`.
+    level : int, optional
+        The inital level to set on `tetris.engine.Scorer`. Optional, defaults
+        to using `rules.initial_level`
     score : int, default = 0
         The inital score to set on `tetris.engine.Scorer`.
     rule_overrides : dict[str, Any], optional
@@ -119,7 +107,7 @@ class BaseGame:
         seed: Optional[Seed] = None,
         board: Optional[Board] = None,
         board_size: tuple[int, int] = (20, 10),
-        level: int = 0,
+        level: Optional[int] = None,
         score: int = 0,
         rule_overrides: dict[str, Any] = {},
         **options: Any,
@@ -141,6 +129,7 @@ class BaseGame:
 
         self.rules = Ruleset(
             Rule("initial_level", int, 1),
+            Rule("queue_size", int, 4),
         )
         for part in (self.gravity, self.queue, self.rs, self.scorer):
             if override := getattr(part, "rule_overrides", None):
@@ -151,7 +140,12 @@ class BaseGame:
 
         self.rules.override(rule_overrides)
 
-        self.scorer.level = self.rules.initial_level
+        self.queue._size = self.rules.queue_size
+        if level is None:
+            self.scorer.level = self.rules.initial_level
+        else:
+            self.scorer.level = level
+
         self.scorer.score = score
 
         self.piece = self.rs.spawn(self.queue.pop())
@@ -381,71 +375,6 @@ class BaseGame:
         self.delta.y = y - self.piece.y
         self.delta.r = r - self.piece.r
 
-    def render(
-        self,
-        tiles: Optional[dict[MinoType, str]] = None,
-        lines: Optional[int] = None,
-    ) -> str:
-        """Render the `board` to a string.
-
-        This method also takes care of visual clues: the ghost piece and the
-        (not locked) piece itself.
-
-        .. deprecated:: 0.6.0
-            Will be removed before 1.0.0. Use the `get_playfield` method or the
-            `playfield` property instead.
-
-        Parameters
-        ----------
-        tiles : `tetris.MinoType` to str mapping, optional
-            A mapping with the corresponding text for the minos.
-        lines : int, optional
-            Amount of lines to render. Optional, defaults to `height`.
-
-        Returns
-        -------
-        str
-            The rendered board
-
-        Examples
-        --------
-        >>> ...
-        >>> tiles = {i: "[]" for i in tetris.MinoType}
-        >>> tiles.update({tetris.MinoType.EMPTY: "  ", tetris.MinoType.GHOST: "@ "})
-        >>> print(game.render(tiles=tiles, lines=10))
-        <BLANKLINE>
-        <BLANKLINE>
-        @
-        @ @ [][]
-        @     [][][]      []
-        [][]  [][][][][][][]
-        []    [][][][][][][]
-        []      [][][][][][]
-        [][]  [][][][][][][]
-        [][]  [][][][][][][]
-        """
-        if lines is None:
-            lines = self.height
-
-        if tiles is None:
-            tiles = _default_tiles
-
-        board = self.board.copy()
-        piece = self.piece
-        ghost_x = piece.x
-
-        for x in range(piece.x + 1, board.shape[0]):
-            if self.rs.overlaps(minos=piece.minos, px=x, py=piece.y):
-                break
-
-            ghost_x = x
-
-        for x, y in piece.minos:
-            board[x + ghost_x, y + piece.y] = 8
-            board[x + piece.x, y + piece.y] = piece.type
-
-        return "\n".join("".join(tiles[j] for j in i) for i in board[-lines:])
-
     def push(self, move: PartialMove) -> None:
         """Push a move into the game.
 
@@ -475,6 +404,8 @@ class BaseGame:
         elif move.kind == MoveKind.hard_drop:
             self._lock_piece()
 
+        self.queue._size = self.rules.queue_size
+        self.queue._safe_fill()
         self.scorer.judge(self.delta)
         if not move.auto:
             self.gravity.calculate(self.delta)
