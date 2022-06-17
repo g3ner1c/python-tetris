@@ -176,8 +176,18 @@ class Queue(EnginePart, Sequence):
         self._seed = seed
         self._random = random.Random(seed)
         self._pieces = [PieceType(i) for i in pieces or []]
-        if len(self._pieces) <= 7:
+        self._size = 7
+        self._safe_fill()
+
+    def _safe_fill(self):
+        prev_size = len(self._pieces)
+        while len(self._pieces) <= self._size:
             self.fill()
+            if prev_size >= len(self._pieces):
+                # Prevent an infinite loop
+                raise RuntimeError("fill() did not increase `_pieces`!")
+
+            prev_size = len(self._pieces)
 
     @classmethod
     def from_game(cls, game: BaseGame) -> Queue:
@@ -186,9 +196,7 @@ class Queue(EnginePart, Sequence):
 
     def pop(self) -> PieceType:
         """Remove and return the first piece of the queue."""
-        if len(self._pieces) <= 7:
-            self.fill()
-
+        self._safe_fill()
         return self._pieces.pop(0)
 
     @abc.abstractmethod
@@ -208,7 +216,7 @@ class Queue(EnginePart, Sequence):
 
     def __iter__(self) -> Iterator[PieceType]:
         for i, j in enumerate(self._pieces):
-            if i >= 7:
+            if i >= self._size:
                 break
             yield j
 
@@ -221,10 +229,10 @@ class Queue(EnginePart, Sequence):
         ...
 
     def __getitem__(self, i):
-        return self._pieces[:7][i]
+        return self._pieces[:self._size][i]
 
     def __len__(self) -> int:
-        return 7
+        return self._size
 
     def __repr__(self) -> str:
         return (

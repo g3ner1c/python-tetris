@@ -76,7 +76,7 @@ def main(screen: curses.window) -> None:
                 board.addstr(x + 1, y * 2 + 1, ch, paint)
 
         status.addstr(1, 2, " Queue ", curses.A_STANDOUT)
-        for i, piece in enumerate(game.queue[:4]):
+        for i, piece in enumerate(game.queue):
             status.addstr(2, 4 + i * 3, piece.name, colors[piece])  # type: ignore
             if i < 3:
                 status.addstr(2, 5 + i * 3, ",", curses.A_DIM)

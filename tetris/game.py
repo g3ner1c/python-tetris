@@ -128,6 +128,7 @@ class BaseGame:
 
         self.rules = Ruleset(
             Rule("initial_level", int, 1),
+            Rule("queue_size", int, 4),
         )
         for part in (self.gravity, self.queue, self.rs, self.scorer):
             if override := getattr(part, "rule_overrides", None):
@@ -138,6 +139,7 @@ class BaseGame:
 
         self.rules.override(rule_overrides)
 
+        self.queue._size = self.rules.queue_size
         if level is None:
             self.scorer.level = self.rules.initial_level
         else:
@@ -390,6 +392,8 @@ class BaseGame:
         elif move.kind == MoveKind.hard_drop:
             self._lock_piece()
 
+        self.queue._size = self.rules.queue_size
+        self.queue._safe_fill()
         self.scorer.judge(self.delta)
         if not move.auto:
             self.gravity.calculate(self.delta)
