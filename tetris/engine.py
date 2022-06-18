@@ -54,8 +54,13 @@ class Engine(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def queue(self, game: BaseGame) -> Queue:
+    def queue(self, game: BaseGame, pieces: Iterable[int]) -> Queue:
         """Return a new `Queue` object.
+
+        Parameters
+        ----------
+        pieces : Iterable[int]
+            Passed to `Queue`.
 
         Returns
         -------
@@ -74,8 +79,15 @@ class Engine(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def scorer(self, game: BaseGame) -> Scorer:
+    def scorer(self, game: BaseGame, score: int, level: int) -> Scorer:
         """Return a new `Scorer` object.
+
+        Parameters
+        ----------
+        score : int
+            Passed to `Scorer`.
+        level : int
+            Passed to `Scorer`.
 
         Returns
         -------
@@ -204,9 +216,9 @@ class Queue(EnginePart, Sequence):
             prev_size = len(self._pieces)
 
     @classmethod
-    def from_game(cls, game: BaseGame) -> Queue:
+    def from_game(cls, game: BaseGame, pieces: Optional[Iterable[int]] = None) -> Queue:
         """Construct this object from a game object."""
-        return cls(seed=game.seed)
+        return cls(pieces=pieces, seed=game.seed)
 
     def pop(self) -> PieceType:
         """Remove and return the first piece of the queue."""
@@ -365,16 +377,18 @@ class Scorer(EnginePart):
     level: int
     line_clears: int
 
-    def __init__(self) -> None:
-        self.score = 0
-        self.start_level = 1
-        self.level = 1
-        self.line_clears = 0
+    def __init__(
+        self, score: Optional[int] = None, level: Optional[int] = None
+    ) -> None:
+        self.score = score or 0
+        self.level = level or 1
 
     @classmethod
-    def from_game(cls, game: BaseGame) -> Scorer:
+    def from_game(
+        cls, game: BaseGame, score: Optional[int] = None, level: Optional[int] = None
+    ) -> Scorer:
         """Construct this object from a game object."""
-        return cls()
+        return cls(score=score, level=level)
 
     @abc.abstractmethod
     def judge(self, delta: MoveDelta) -> None:

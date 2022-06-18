@@ -36,8 +36,8 @@ class Rule:
     ----------
     name : str
         The name of the rule. This is accessed from `Ruleset` as an attribute.
-    type : type
-        The accepted type for this rule.
+    type : type or tuple[type, ...]
+        The accepted type(s) for this rule.
 
         .. hint::
             This is checked using `isinstance` and is thus limited to what
@@ -57,7 +57,7 @@ class Rule:
     """
 
     name: str
-    type: type
+    type: Union[type, tuple[type, ...]]
     default: Any
 
     def __post_init__(self):
