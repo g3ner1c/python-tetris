@@ -3,6 +3,7 @@
 import dataclasses
 import math
 import secrets
+from collections.abc import Iterable
 from typing import Any, Optional
 
 import numpy as np
@@ -33,9 +34,6 @@ class BaseGame:
     engine : tetris.engine.Engine class, default = tetris.impl.presets.ModernEngine
         An engine class, which contains a game's core logic. The default is to
         mimic a modern Tetris game.
-    seed : tetris.types.Seed, optional
-        A str, int or bytes object, which will be used as the games's
-        random seed. Optional, defaults to calling `secrets.token_bytes`.
     board : tetris.types.Board, optional
         A 2D `numpy.ndarray` with scalar `numpy.int8`, given as the
         initial board data. Optional, defaults to making a new board.
@@ -43,20 +41,32 @@ class BaseGame:
         .. hint::
             The *visible* board is half as short as the given (*internal*)
             board. This is so as to "buffer" the board from large attacks.
-    board_size : tuple[int, int], default = (20, 10)
-        An integer tuple for the height/width of the (visible) board. This is
-        ignored if a board is provided.
     level : int, optional
-        The inital level to set on `tetris.engine.Scorer`. Optional, defaults
-        to using `rules.initial_level`
+        The inital level to pass to `tetris.engine.Scorer`. Optional, defaults
+        to using the `"initial_level"` rule.
+
+        .. hint::
+            This is not equivalent to the `"initial_level"` rule, it's meant to
+            be used when initialising a game from saved data. Some scorers
+            might apply different scoring when the user starts on a different
+            level. If that's not your case, use that rule instead of this.
     score : int, default = 0
-        The inital score to set on `tetris.engine.Scorer`.
+        The inital score to pass to `tetris.engine.Scorer`.
+    queue : Iterable[int], optional
+        The initial pieces to pass to `tetris.engine.Queue`.
     rule_overrides : dict[str, Any], optional
         Mapping of rule names to overriden values.
 
         .. seealso:: `Ruleset`, `Rule`
     **options : dict, optional
         Extra arguments to pass to `engine`.
+
+    Other Parameters
+    ----------------
+    seed : Seed, optional
+        Shorthand for updating the `"seed"` rule.
+    board_size : tuple[int, int], optional
+        Shorthand for updating the `"board_size"` rule.
 
     Attributes
     ----------
@@ -100,36 +110,53 @@ class BaseGame:
     playfield : Board
     """
 
+    # TODO: Add an examples section on the above.
+
     def __init__(
         self,
         engine: type[Engine] = ModernEngine,
-        seed: Optional[Seed] = None,
+        /,
         board: Optional[Board] = None,
-        board_size: tuple[int, int] = (20, 10),
+        queue: Optional[Iterable[int]] = None,
         level: Optional[int] = None,
         score: int = 0,
+        seed: Optional[Seed] = None,
+        board_size: Optional[tuple[int, int]] = None,
         rule_overrides: dict[str, Any] = {},
         **options: Any,
     ):
         self.engine = engine(**options)
-        self.seed = seed or secrets.token_bytes()
+
+        self.rules = Ruleset(
+            Rule("board_size", tuple, (20, 10)),
+            Rule("initial_level", int, 1),
+            Rule("queue_size", int, 4),
+            Rule("seed", (int, bytes, str, type(None)), None),
+        )
+        self.rules.override(rule_overrides)
+        if seed:
+            self.rules.seed = seed
+        if board_size:
+            self.rules.board_size = board_size
+
         if board is None:
             # Internally, we use 2x the height to "buffer" the board being
             # pushed above the view (e.g.: with garbage)
-            self.board = np.zeros((board_size[0] * 2, board_size[1]), dtype=np.int8)
-
+            self.board = np.zeros(
+                (self.rules.board_size[0] * 2, self.rules.board_size[1]), dtype=np.int8
+            )
         else:
             self.board = board
 
-        self.gravity = self.engine.gravity(self)
-        self.queue = self.engine.queue(self)
-        self.rs = self.engine.rotation_system(self)
-        self.scorer = self.engine.scorer(self)
+        self.seed = self.rules.seed or secrets.token_bytes()
 
-        self.rules = Ruleset(
-            Rule("initial_level", int, 1),
-            Rule("queue_size", int, 4),
-        )
+        if level is None:
+            level = self.rules.initial_level
+
+        self.gravity = self.engine.gravity(self)
+        self.queue = self.engine.queue(self, queue or [])
+        self.rs = self.engine.rotation_system(self)
+        self.scorer = self.engine.scorer(self, score=score, level=level)
         for part in (self.gravity, self.queue, self.rs, self.scorer):
             if override := getattr(part, "rule_overrides", None):
                 self.rules.override(override)
@@ -140,12 +167,6 @@ class BaseGame:
         self.rules.override(rule_overrides)
 
         self.queue._size = self.rules.queue_size
-        if level is None:
-            self.scorer.level = self.rules.initial_level
-        else:
-            self.scorer.level = level
-
-        self.scorer.score = score
 
         self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing
@@ -241,23 +262,14 @@ class BaseGame:
         board.flags.writeable = False
         return board[-self.height - buffer_lines :]
 
-    def reset(self, seed: Optional[Seed] = None, level: int = 0) -> None:
-        """Restart the game, only keeping the `engine` instance.
-
-        Parameters
-        ----------
-        seed : tetris.types.Seed, optional
-            The random seed to initialise this with.
-        level : int, optional
-            The initial level to set on `tetris.engine.Scorer`.
-        """
-        self.seed = seed or secrets.token_bytes()
+    def reset(self) -> None:
+        """Restart the game, only keeping the `engine` instance."""
+        self.seed = self.rules.seed or secrets.token_bytes()
         self.board[:] = 0
         self.gravity = self.engine.gravity(self)
-        self.queue = self.engine.queue(self)
+        self.queue = self.engine.queue(self, [])
         self.rs = self.engine.rotation_system(self)
-        self.scorer = self.engine.scorer(self)
-        self.scorer.level = level
+        self.scorer = self.engine.scorer(self, score=0, level=self.rules.initial_level)
         self.piece = self.rs.spawn(self.queue.pop())
         self.status = PlayingStatus.playing
         self.delta = None

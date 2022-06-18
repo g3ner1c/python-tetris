@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from tetris.engine import Engine
@@ -71,11 +72,11 @@ class CustomEngine(Engine):
     def gravity(self, game: BaseGame) -> Gravity:  # noqa: D102
         return self.parts["gravity"].from_game(game)
 
-    def queue(self, game: BaseGame) -> Queue:  # noqa: D102
-        return self.parts["queue"].from_game(game)
+    def queue(self, game: BaseGame, pieces: Iterable[int]) -> Queue:  # noqa: D102
+        return self.parts["queue"].from_game(game, pieces)
 
     def rotation_system(self, game: BaseGame) -> RotationSystem:  # noqa: D102
         return self.parts["rotation_system"].from_game(game)
 
-    def scorer(self, game: BaseGame) -> Scorer:  # noqa: D102
-        return self.parts["scorer"].from_game(game)
+    def scorer(self, game: BaseGame, score: int, level: int) -> Scorer:  # noqa: D102
+        return self.parts["scorer"].from_game(game, score=score, level=level)

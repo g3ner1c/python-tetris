@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Optional
+
 from tetris.engine import Scorer
 from tetris.types import MoveDelta
 from tetris.types import MoveKind
@@ -20,9 +22,9 @@ class GuidelineScorer(Scorer):
     A more thorough explanation can be found at <https://tetris.wiki/Scoring>.
     """
 
-    def __init__(self):
-        self.score = 0
-        self.level = 1
+    def __init__(self, score: Optional[int] = None, level: Optional[int] = None):
+        self.score = score or 0
+        self.level = level or 1
         self.line_clears = 0
         self.combo = 0
         self.back_to_back = 0
