@@ -170,7 +170,11 @@ class NESScorer(Scorer):
             self.score += score
             self.line_clears += line_clears
 
-            if self.line_clears >= min(
-                self.initial_level * 10 + 10, max(100, self.initial_level * 10 - 50)
+            if (
+                self.line_clears
+                >= min(
+                    self.initial_level * 10 + 10, max(100, self.initial_level * 10 - 50)
+                )
+                + (self.level - self.initial_level) * 10
             ):
                 self.level += 1

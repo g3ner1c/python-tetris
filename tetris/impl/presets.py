@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from tetris import BaseGame
 
 from collections.abc import Iterable
+from typing import Optional
 
 from tetris.impl import gravity
 from tetris.impl import queue
@@ -26,7 +27,7 @@ class ModernEngine(Engine):
         return queue.SevenBag(pieces=pieces, seed=game.seed)
 
     def scorer(
-        self, game: BaseGame, score: int, level: int
+        self, game: BaseGame, score: Optional[int], level: Optional[int]
     ) -> scorer.GuidelineScorer:  # noqa: D102
         return scorer.GuidelineScorer(score=score, level=level)
 
@@ -44,7 +45,7 @@ class NESEngine(Engine):
         return queue.NES(pieces=pieces, seed=game.seed)
 
     def scorer(
-        self, game: BaseGame, score: int, level: int
+        self, game: BaseGame, score: Optional[int], level: Optional[int]
     ) -> scorer.NESScorer:  # noqa: D102
         return scorer.NESScorer(
             score=score, level=level, initial_level=game.rules.initial_level
