@@ -166,7 +166,7 @@ class BaseGame:
 
         if level is None:
             level = self.rules.initial_level
-        self.engine.scorer.level = level
+        self.scorer = self.engine.scorer(self, score=score, level=level)
 
         self.queue._size = self.rules.queue_size
 
