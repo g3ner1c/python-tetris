@@ -9,8 +9,8 @@ from tetris.types import Board
 from tetris.types import Minos
 from tetris.types import Piece
 from tetris.types import PieceType
-from tetris.types import Ruleset
 from tetris.types import Rule
+from tetris.types import Ruleset
 
 KickTable = dict[tuple[int, int], tuple[tuple[int, int], ...]]  # pardon
 
@@ -460,10 +460,7 @@ class NRS(RotationSystem):
     def __init__(self, board: Board):
         super().__init__(board)
 
-        self.rules = Ruleset(
-            Rule("game_boy", bool, False),
-            name="nrs"
-        )
+        self.rules = Ruleset(Rule("game_boy", bool, False), name="nrs")
 
     def spawn(self, piece: PieceType) -> Piece:  # noqa: D102
         if self.rules.game_boy:
