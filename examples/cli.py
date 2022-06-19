@@ -4,12 +4,13 @@ import time
 import tetris
 from tetris import MinoType
 from tetris import Move
+from tetris.impl.presets import NESEngine
 
 
 @curses.wrapper
 def main(screen: curses.window) -> None:
     game_start = time.monotonic()
-    game = tetris.BaseGame()
+    game = tetris.BaseGame(NESEngine)
 
     moves: dict[int, Move] = {
         ord("z"): Move.rotate(-1),

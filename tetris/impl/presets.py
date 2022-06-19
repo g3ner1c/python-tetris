@@ -40,11 +40,15 @@ class ModernEngine(Engine):
 class NESEngine(Engine):
     """1989 Nintendo NES Tetris engine implementation."""
 
-    def queue(self, game: BaseGame) -> queue.NES:  # noqa: D102
-        return queue.NES(seed=game.seed)
+    def queue(self, game: BaseGame, pieces: Iterable[int]) -> queue.NES:  # noqa: D102
+        return queue.NES(pieces=pieces, seed=game.seed)
 
-    def scorer(self, game: BaseGame) -> scorer.NESScorer:  # noqa: D102
-        return scorer.NESScorer()
+    def scorer(
+        self, game: BaseGame, score: int, level: int
+    ) -> scorer.NESScorer:  # noqa: D102
+        return scorer.NESScorer(
+            score=score, level=level, initial_level=game.rules.initial_level
+        )
 
     def rotation_system(self, game: BaseGame) -> rotation.NRS:  # noqa: D102
         return rotation.NRS(board=game.board)

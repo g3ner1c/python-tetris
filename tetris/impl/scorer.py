@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from tetris.engine import Scorer
 from tetris.types import MoveDelta
 from tetris.types import MoveKind
 from tetris.types import PieceType
+
+if TYPE_CHECKING:
+    from tetris.game import BaseGame
 
 
 class GuidelineScorer(Scorer):
@@ -127,15 +130,29 @@ class NESScorer(Scorer):
     A more thorough explanation can be found at <https://tetris.wiki/Scoring>.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        score: Optional[int] = None,
+        level: Optional[int] = None,
+        initial_level: Optional[int] = None,
+    ) -> None:
         self.score = 0
-        self.start_level = 0
         self.level = 0  # NES starts on level 0
         self.line_clears = 0
+        self.initial_level = initial_level or None
+        self.rule_overrides = {"initial_level": 0}
+
+    @classmethod
+    def from_game(
+        cls,
+        game: BaseGame,
+        score: Optional[int] = None,
+        level: Optional[int] = None,
+    ) -> NESScorer:  # noqa: D102
+        return cls(score=score, level=level, initial_level=game.rules.initial_level)
 
     def judge(self, delta: MoveDelta) -> None:  # noqa: D102
-
-        if delta.kind == MoveKind.soft_drop:  # soft drop
+        if delta.kind == MoveKind.soft_drop:
             if not delta.auto:
                 self.score += delta.x
 
@@ -153,9 +170,7 @@ class NESScorer(Scorer):
             self.score += score
             self.line_clears += line_clears
 
-            if (
-                self.line_clears
-                > min(self.start_level * 10 + 10, max(100, self.start_level * 10 - 50))
-                + (self.level - self.start_level) * 10
+            if self.line_clears >= min(
+                self.initial_level * 10 + 10, max(100, self.initial_level * 10 - 50)
             ):
                 self.level += 1

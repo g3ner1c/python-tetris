@@ -373,7 +373,6 @@ class Scorer(EnginePart):
     """
 
     score: int
-    start_level: int  # starting level can affect diffrent scoring systems
     level: int
     line_clears: int
 

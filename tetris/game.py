@@ -10,7 +10,6 @@ import numpy as np
 
 from tetris.engine import Engine
 from tetris.impl.presets import ModernEngine
-from tetris.impl.scorer import NESScorer
 from tetris.types import Board
 from tetris.types import MinoType
 from tetris.types import Move
