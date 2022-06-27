@@ -44,7 +44,9 @@ class Engine(abc.ABC):
     """
 
     @abc.abstractmethod
-    def _get_types(self) -> tuple[type[Gravity], type[Queue], type[RotationSystem], type[Scorer]]:
+    def _get_types(
+        self,
+    ) -> tuple[type[Gravity], type[Queue], type[RotationSystem], type[Scorer]]:
         """Return the types of the engine parts.
 
         Returns

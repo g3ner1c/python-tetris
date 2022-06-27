@@ -150,7 +150,7 @@ class BaseGame:
 
         self.seed = self.rules.seed or secrets.token_bytes()
 
-        for part in (self.engine._get_types()):
+        for part in self.engine._get_types():
             # these are all classvars so no need to init
             if override := getattr(part, "rule_overrides", None):
                 self.rules.override(override)
@@ -161,7 +161,7 @@ class BaseGame:
         if level is None:
             level = self.rules.initial_level
 
-        self.rules.override(rule_overrides) # BaseGame overrides get priority
+        self.rules.override(rule_overrides)  # BaseGame overrides get priority
 
         self.gravity = self.engine.gravity(self)
         self.queue = self.engine.queue(self, queue or [])
