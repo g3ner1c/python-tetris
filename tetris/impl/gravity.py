@@ -109,3 +109,62 @@ class InfinityGravity(Gravity):
                 minos=piece.minos, px=piece.x + 1, py=piece.y
             ):
                 self.idle_lock.start()
+
+
+class NESGravity(Gravity):
+    """NES gravity without lock delay, typically played without hard drops.
+
+    Notes
+    -----
+    See <https://tetris.wiki/Tetris_(NES,_Nintendo)>.
+    """
+
+    def __init__(self, game: BaseGame):
+        super().__init__(game)
+
+        self.last_drop = time.monotonic_ns()
+
+    def calculate(self, delta: Optional[MoveDelta] = None) -> None:  # noqa: D102
+        level = self.game.level
+        piece = self.game.piece
+
+        # NES runs at 60.0988 fps
+        NES_GRAV_FRAMES = {
+            29: 1,
+            19: 2,
+            16: 3,
+            13: 4,
+            10: 5,
+            9: 6,
+            8: 8,
+            7: 13,
+            6: 18,
+            5: 23,
+            4: 28,
+            3: 33,
+            2: 38,
+            1: 43,
+            0: 48,
+        }
+
+        for i in NES_GRAV_FRAMES:  # set gravity based on level
+            if level >= i:
+                drop_delay = NES_GRAV_FRAMES[i] * (SECOND / 60.0988)
+                break
+
+        now = time.monotonic_ns()
+
+        since_drop = now - self.last_drop
+        if since_drop >= drop_delay:
+            if self.game.rs.overlaps(minos=piece.minos, px=piece.x + 1, py=piece.y):
+                # hard drop if there is a piece below
+                self.game.push(Move(kind=MoveKind.hard_drop, auto=True))
+            else:
+                self.game.push(
+                    Move(
+                        kind=MoveKind.soft_drop,
+                        x=int(since_drop / drop_delay),
+                        auto=True,
+                    )
+                )
+            self.last_drop = now

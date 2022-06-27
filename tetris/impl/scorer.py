@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from tetris.engine import Scorer
 from tetris.types import MoveDelta
 from tetris.types import MoveKind
 from tetris.types import PieceType
+
+if TYPE_CHECKING:
+    from tetris.game import BaseGame
 
 
 class GuidelineScorer(Scorer):
@@ -26,6 +29,7 @@ class GuidelineScorer(Scorer):
         self.score = score or 0
         self.level = level or 1
         self.line_clears = 0
+        self.goal = self.level * 10
         self.combo = 0
         self.back_to_back = 0
 
@@ -112,5 +116,65 @@ class GuidelineScorer(Scorer):
             self.score += score
             self.line_clears += line_clears
 
-            if self.level < self.line_clears // 10 + 1:
+            if self.line_clears >= self.goal:
+                self.goal += 10
                 self.level += 1
+
+
+class NESScorer(Scorer):
+    """The NES scoring system.
+
+    Notes
+    -----
+    This class implements the orginal scoring system found in the Nintendo NES
+    Tetris games.
+
+    A more thorough explanation can be found at <https://tetris.wiki/Scoring>.
+    """
+
+    rule_overrides = {"initial_level": 0}
+
+    def __init__(
+        self,
+        score: Optional[int] = None,
+        level: Optional[int] = None,
+        initial_level: Optional[int] = None,
+    ) -> None:
+        self.score = score or 0
+        self.level = level or 0  # NES starts on level 0
+        self.line_clears = 0
+        self.initial_level = initial_level or 0
+        self.goal = min(
+            self.initial_level * 10 + 10, max(100, self.initial_level * 10 - 50)
+        )
+
+    @classmethod
+    def from_game(
+        cls,
+        game: BaseGame,
+        score: Optional[int] = None,
+        level: Optional[int] = None,
+    ) -> NESScorer:  # noqa: D102
+        return cls(score=score, level=level, initial_level=game.rules.initial_level)
+
+    def judge(self, delta: MoveDelta) -> None:  # noqa: D102
+        if delta.kind == MoveKind.soft_drop:
+            if not delta.auto:
+                self.score += delta.x
+
+        elif delta.kind == MoveKind.hard_drop:
+            # NRS doesn't have hard drop score bonus but added anyways for
+            # comptability and modularity with other rotation systems
+            if not delta.auto:
+                self.score += delta.x
+            score = 0
+            line_clears = len(delta.clears)
+
+            score += [0, 40, 100, 300, 1200][line_clears]
+            score *= self.level + 1
+
+            self.score += score
+            self.line_clears += line_clears
+            if self.line_clears >= self.goal:
+                self.level += 1
+                self.goal = self.line_clears + 10

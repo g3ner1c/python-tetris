@@ -9,6 +9,8 @@ from tetris.types import Board
 from tetris.types import Minos
 from tetris.types import Piece
 from tetris.types import PieceType
+from tetris.types import Rule
+from tetris.types import Ruleset
 
 KickTable = dict[tuple[int, int], tuple[tuple[int, int], ...]]  # pardon
 
@@ -227,14 +229,31 @@ class SRS(RotationSystem):
     def spawn(self, piece: PieceType) -> Piece:  # noqa: D102
         mx, my = self.board.shape
 
+        # find x position of lowest block
+        spawn_x = 0
+        for coor in self.shapes[piece][0]:
+            # could replace with dict but this is rotation system independent
+            if coor[0] > spawn_x:
+                spawn_x = coor[0]
+
+        # lowest block spawns at one row above top row of visible area
+        spawn_x = (mx // 2 - 1) - spawn_x
+
+        spawn_y = (my + 3) // 2 - 3  # left-aligned centre-ish
+        minos = self.shapes[piece][0]
+
+        # if top row isn't blocked move down
+        if not self.overlaps(minos=minos, px=spawn_x, py=spawn_y) and not self.overlaps(
+            minos=minos, px=spawn_x + 1, py=spawn_y
+        ):
+            spawn_x += 1
+
         return Piece(
             type=piece,
-            # just above visible area
-            x=mx // 2 - 2,
-            # left-aligned centre-ish
-            y=(my + 3) // 2 - 3,
+            x=spawn_x,
+            y=spawn_y,
             r=0,
-            minos=self.shapes[piece][0],
+            minos=minos,
         )
 
     def rotate(self, piece: Piece, r: int) -> None:  # noqa: D102
@@ -273,3 +292,213 @@ _Tetrio_override = {
     (2, 0): ((+1, +0), (+1, -1), (+1, +1), (+0, -1), (+0, +1)),
     (3, 1): ((+0, -1), (-2, -1), (-1, -1), (-2, +0), (-1, +0)),
 }
+
+_NRS_shapes: dict[PieceType, list[Minos]] = {
+    PieceType.I: [
+        ((2, 0), (2, 1), (2, 2), (2, 3)),
+        #    . . . .
+        #    . . . .
+        #    [][][][]
+        #    . . . .
+        ((0, 2), (1, 2), (2, 2), (3, 2)),
+        #    . . [].
+        #    . . [].
+        #    . . [].
+        #    . . [].
+        ((2, 0), (2, 1), (2, 2), (2, 3)),
+        #    repeats
+        ((0, 2), (1, 2), (2, 2), (3, 2)),
+    ],
+    PieceType.L: [
+        ((1, 0), (1, 1), (1, 2), (2, 0)),
+        #    . . .
+        #    [][][]
+        #    []. .
+        ((0, 0), (0, 1), (1, 1), (2, 1)),
+        #    [][] .
+        #    . [] .
+        #    . [] .
+        ((0, 2), (1, 0), (1, 1), (1, 2)),
+        #    . . []
+        #    [][][]
+        #    . . .
+        ((0, 1), (1, 1), (2, 1), (2, 2)),
+        #    . [] .
+        #    . [] .
+        #    . [][]
+    ],
+    PieceType.J: [
+        ((1, 0), (1, 1), (1, 2), (2, 2)),
+        #    . . .
+        #    [][][]
+        #    . . []
+        ((0, 1), (1, 1), (2, 0), (2, 1)),
+        #    . [] .
+        #    . [] .
+        #    [][] .
+        ((0, 0), (1, 0), (1, 1), (1, 2)),
+        #    []. .
+        #    [][][]
+        #    . . .
+        ((0, 1), (0, 2), (1, 1), (2, 1)),
+        #    . [][]
+        #    . [] .
+        #    . [] .
+    ],
+    PieceType.S: [
+        ((1, 1), (1, 2), (2, 0), (2, 1)),
+        #    . . .
+        #    . [][]
+        #    [][].
+        ((0, 1), (1, 1), (1, 2), (2, 2)),
+        #    . [] .
+        #    . [][]
+        #    . . []
+        ((1, 1), (1, 2), (2, 0), (2, 1)),
+        #    repeats
+        ((0, 1), (1, 1), (1, 2), (2, 2)),
+    ],
+    PieceType.Z: [
+        ((1, 0), (1, 1), (2, 1), (2, 2)),
+        #    . . .
+        #    [][].
+        #    . [][]
+        ((0, 2), (1, 1), (1, 2), (2, 1)),
+        #    . . []
+        #    . [][]
+        #    . [] .
+        ((1, 0), (1, 1), (2, 1), (2, 2)),
+        #    repeats
+        ((0, 2), (1, 1), (1, 2), (2, 1)),
+    ],
+    PieceType.T: [
+        ((1, 0), (1, 1), (1, 2), (2, 1)),
+        #    . . .
+        #    [][][]
+        #    . [].
+        ((0, 1), (1, 0), (1, 1), (2, 1)),
+        #    . [].
+        #    [][].
+        #    . [].
+        ((0, 1), (1, 0), (1, 1), (1, 2)),
+        #    . [].
+        #    [][][]
+        #    . . .
+        ((0, 1), (1, 1), (1, 2), (2, 1)),
+        #    . [].
+        #    . [][]
+        #    . [].
+    ],
+    PieceType.O: [
+        ((0, 1), (0, 2), (1, 1), (1, 2)),
+        ((0, 1), (0, 2), (1, 1), (1, 2)),
+        ((0, 1), (0, 2), (1, 1), (1, 2)),
+        ((0, 1), (0, 2), (1, 1), (1, 2)),
+        #    [][]
+        #    [][]
+    ],
+}
+_NRS_gb_shapes = _NRS_shapes | {
+    PieceType.I: [
+        ((2, 0), (2, 1), (2, 2), (2, 3)),
+        #    . . . .
+        #    . . . .
+        #    [][][][]
+        #    . . . .
+        ((0, 1), (1, 1), (2, 1), (3, 1)),
+        #    . []. .
+        #    . []. .
+        #    . []. .
+        #    . []. .
+        ((2, 0), (2, 1), (2, 2), (2, 3)),
+        #    repeats
+        ((0, 1), (1, 1), (2, 1), (3, 1)),
+    ],
+    PieceType.S: [
+        ((1, 1), (1, 2), (2, 0), (2, 1)),
+        #    . . .
+        #    . [][]
+        #    [][].
+        ((0, 0), (1, 0), (1, 1), (2, 1)),
+        #    []. .
+        #    [][].
+        #    . [].
+        ((1, 1), (1, 2), (2, 0), (2, 1)),
+        #    repeats
+        ((0, 0), (1, 0), (1, 1), (2, 1)),
+    ],
+    PieceType.Z: [
+        ((1, 0), (1, 1), (2, 1), (2, 2)),
+        #    . . .
+        #    [][].
+        #    . [][]
+        ((0, 1), (1, 0), (1, 1), (2, 0)),
+        #    . [].
+        #    [][].
+        #    []. .
+        ((1, 0), (1, 1), (2, 1), (2, 2)),
+        #    repeats
+        ((0, 1), (1, 0), (1, 1), (2, 0)),
+    ],
+}
+
+
+class NRS(RotationSystem):
+    """The NRS rotation system.
+
+    NRS, aka Nintendo Rotation System, is the rotation system used in the
+    Nintendo NES and Game Boy Tetris games. This rotation system does not have
+    kicks. The right-handed variant of NRS is used in NES Tetris, while
+    the left-handed variant is used in Game Boy Tetris.
+
+    Notes
+    -----
+    This class by default uses the NES right-handed variant because it is more
+    popular and well known.
+    """
+
+    def __init__(self, board: Board):
+        super().__init__(board)
+
+        self.rules = Ruleset(Rule("game_boy", bool, False), name="nrs")
+
+    def spawn(self, piece: PieceType) -> Piece:  # noqa: D102
+        if self.rules.game_boy:
+            shapes = _NRS_gb_shapes
+        else:
+            shapes = _NRS_shapes
+
+        mx, my = self.board.shape
+
+        # find x position of highest block
+        spawn_x = 3
+        for x, _ in shapes[piece][0]:
+            if x < spawn_x:
+                spawn_x = x
+
+        # highest block spawns at top row of visible area
+        spawn_x = (mx // 2) - spawn_x
+
+        if self.rules.game_boy:
+            # game boy spawns at 3 rows below top (row 17 for 10x20 playfield)
+            spawn_x += 3
+
+        return Piece(
+            type=piece,
+            x=spawn_x,
+            y=(my + 3) // 2 - 3,
+            r=0,
+            minos=shapes[piece][0],
+        )
+
+    def rotate(self, piece: Piece, r: int) -> None:  # noqa: D102
+        if self.rules.game_boy:
+            shapes = _NRS_gb_shapes
+        else:
+            shapes = _NRS_shapes
+
+        to_r = (piece.r + r) % 4
+        minos = shapes[piece.type][to_r]
+        if not self.overlaps(minos=minos, px=piece.x, py=piece.y):
+            piece.r = to_r
+            piece.minos = minos
