@@ -44,6 +44,16 @@ class Engine(abc.ABC):
     """
 
     @abc.abstractmethod
+    def _get_types(self) -> tuple[type[Gravity], type[Queue], type[RotationSystem], type[Scorer]]:
+        """Return the types of the engine parts.
+
+        Returns
+        -------
+        tuple[type[Gravity], type[Queue], type[RotationSystem], type[Scorer]]
+        """
+        ...
+
+    @abc.abstractmethod
     def gravity(self, game: BaseGame) -> Gravity:
         """Return a new `Gravity` object.
 
@@ -375,6 +385,7 @@ class Scorer(EnginePart):
     score: int
     level: int
     line_clears: int
+    goal: int
 
     def __init__(
         self, score: Optional[int] = None, level: Optional[int] = None

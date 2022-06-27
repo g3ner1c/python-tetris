@@ -29,6 +29,7 @@ class GuidelineScorer(Scorer):
         self.score = score or 0
         self.level = level or 1
         self.line_clears = 0
+        self.goal = self.level * 10
         self.combo = 0
         self.back_to_back = 0
 
@@ -115,7 +116,8 @@ class GuidelineScorer(Scorer):
             self.score += score
             self.line_clears += line_clears
 
-            if self.level < self.line_clears // 10 + 1:
+            if self.line_clears >= self.goal:
+                self.goal += 10
                 self.level += 1
 
 
@@ -130,17 +132,18 @@ class NESScorer(Scorer):
     A more thorough explanation can be found at <https://tetris.wiki/Scoring>.
     """
 
+    rule_overrides = {"initial_level": 0}
+
     def __init__(
         self,
         score: Optional[int] = None,
         level: Optional[int] = None,
         initial_level: Optional[int] = None,
     ) -> None:
-        self.score = 0
-        self.level = 0  # NES starts on level 0
+        self.score = score or 0
+        self.level = level or 0  # NES starts on level 0
         self.line_clears = 0
         self.initial_level = initial_level or 0
-        self.rule_overrides = {"initial_level": 0}
         self.goal = min(
             self.initial_level * 10 + 10, max(100, self.initial_level * 10 - 50)
         )

@@ -133,7 +133,7 @@ class BaseGame:
             Rule("queue_size", int, 4),
             Rule("seed", (int, bytes, str, type(None)), None),
         )
-        self.rules.override(rule_overrides)
+
         if seed:
             self.rules.seed = seed
         if board_size:
@@ -150,21 +150,23 @@ class BaseGame:
 
         self.seed = self.rules.seed or secrets.token_bytes()
 
-        if level is None:
-            level = self.rules.initial_level
-
-        self.gravity = self.engine.gravity(self)
-        self.queue = self.engine.queue(self, queue or [])
-        self.rs = self.engine.rotation_system(self)
-        self.scorer = self.engine.scorer(self, score=score, level=level)
-        for part in (self.gravity, self.queue, self.rs, self.scorer):
+        for part in (self.engine._get_types()):
+            # these are all classvars so no need to init
             if override := getattr(part, "rule_overrides", None):
                 self.rules.override(override)
 
             if rules := getattr(part, "rules", None):
                 self.rules.register(rules)
 
-        self.rules.override(rule_overrides)
+        if level is None:
+            level = self.rules.initial_level
+
+        self.rules.override(rule_overrides) # BaseGame overrides get priority
+
+        self.gravity = self.engine.gravity(self)
+        self.queue = self.engine.queue(self, queue or [])
+        self.rs = self.engine.rotation_system(self)
+        self.scorer = self.engine.scorer(self, score=score, level=level)
 
         self.queue._size = self.rules.queue_size
 

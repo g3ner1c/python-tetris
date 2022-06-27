@@ -20,6 +20,9 @@ from tetris.impl import scorer
 class ModernEngine(Engine):
     """Modern guideline-compliant engine implementation."""
 
+    def _get_types(self) -> tuple[type[gravity.InfinityGravity], type[queue.SevenBag], type[rotation.SRS], type[scorer.GuidelineScorer]]:  # noqa: D102
+        return (gravity.InfinityGravity, queue.SevenBag, rotation.SRS, scorer.GuidelineScorer)
+
     def queue(
         self, game: BaseGame, pieces: Iterable[int]
     ) -> queue.SevenBag:  # noqa: D102
@@ -39,6 +42,9 @@ class ModernEngine(Engine):
 
 class NESEngine(Engine):
     """1989 Nintendo NES Tetris engine implementation."""
+
+    def _get_types(self) -> tuple[type[gravity.NESGravity], type[queue.NES], type[rotation.NRS], type[scorer.NESScorer]]:  # noqa: D102
+        return (gravity.NESGravity, queue.NES, rotation.NRS, scorer.NESScorer)
 
     def queue(self, game: BaseGame, pieces: Iterable[int]) -> queue.NES:  # noqa: D102
         return queue.NES(pieces=pieces, seed=game.seed)
