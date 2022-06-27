@@ -139,8 +139,11 @@ class NESScorer(Scorer):
         self.score = 0
         self.level = 0  # NES starts on level 0
         self.line_clears = 0
-        self.initial_level = initial_level or None
+        self.initial_level = initial_level or 0
         self.rule_overrides = {"initial_level": 0}
+        self.goal = min(
+            self.initial_level * 10 + 10, max(100, self.initial_level * 10 - 50)
+        )
 
     @classmethod
     def from_game(
@@ -169,12 +172,6 @@ class NESScorer(Scorer):
 
             self.score += score
             self.line_clears += line_clears
-
-            if (
-                self.line_clears
-                >= min(
-                    self.initial_level * 10 + 10, max(100, self.initial_level * 10 - 50)
-                )
-                + (self.level - self.initial_level) * 10
-            ):
+            if self.line_clears >= self.goal:
                 self.level += 1
+                self.goal = self.line_clears + 10

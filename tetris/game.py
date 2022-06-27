@@ -134,11 +134,8 @@ class BaseGame:
             Rule("seed", (int, bytes, str, type(None)), None),
         )
         self.rules.override(rule_overrides)
-
         if seed:
             self.rules.seed = seed
-        self.seed = self.rules.seed or secrets.token_bytes()
-
         if board_size:
             self.rules.board_size = board_size
 
@@ -150,6 +147,11 @@ class BaseGame:
             )
         else:
             self.board = board
+
+        self.seed = self.rules.seed or secrets.token_bytes()
+
+        if level is None:
+            level = self.rules.initial_level
 
         self.gravity = self.engine.gravity(self)
         self.queue = self.engine.queue(self, queue or [])
@@ -164,10 +166,6 @@ class BaseGame:
 
         self.rules.override(rule_overrides)
 
-        if level is None:
-            level = self.rules.initial_level
-        self.scorer = self.engine.scorer(self, score=score, level=level)
-
         self.queue._size = self.rules.queue_size
 
         self.piece = self.rs.spawn(self.queue.pop())
@@ -177,7 +175,7 @@ class BaseGame:
         self.hold_lock = False
 
     @property
-    def score(self) -> Optional[int]:
+    def score(self) -> int:
         """Current game score, shorthand for `scorer.score`."""
         return self.scorer.score
 
@@ -186,7 +184,7 @@ class BaseGame:
         self.scorer.score = value
 
     @property
-    def level(self) -> Optional[int]:
+    def level(self) -> int:
         """The current game level, shorthand for `scorer.level`."""
         return self.scorer.level
 

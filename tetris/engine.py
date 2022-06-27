@@ -79,9 +79,7 @@ class Engine(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def scorer(
-        self, game: BaseGame, score: Optional[int], level: Optional[int]
-    ) -> Scorer:
+    def scorer(self, game: BaseGame, score: int, level: int) -> Scorer:
         """Return a new `Scorer` object.
 
         Parameters
@@ -374,8 +372,8 @@ class Scorer(EnginePart):
         The current game level
     """
 
-    score: Optional[int]
-    level: Optional[int]
+    score: int
+    level: int
     line_clears: int
 
     def __init__(
