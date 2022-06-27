@@ -69,6 +69,16 @@ class CustomEngine(Engine):
             "scorer": scorer,
         }
 
+    def _get_types(
+        self,
+    ) -> tuple[type[Gravity], type[Queue], type[RotationSystem], type[Scorer]]:
+        return (
+            self.parts["gravity"],
+            self.parts["queue"],
+            self.parts["rotation_system"],
+            self.parts["scorer"],
+        )
+
     def gravity(self, game: BaseGame) -> Gravity:  # noqa: D102
         return self.parts["gravity"].from_game(game)
 
