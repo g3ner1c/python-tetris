@@ -216,7 +216,7 @@ class SRS(RotationSystem):
     }
 
     i_kicks: ClassVar[KickTable] = {
-        (0, 1): ((+0, -1), (+0, +1), (+1, -2), (-2, +1)),  # 0 -> R | CW
+        (0, 1): ((+0, -2), (+0, +1), (+1, -2), (-2, +1)),  # 0 -> R | CW
         (0, 3): ((+0, -1), (+0, +2), (-2, -1), (+1, +2)),  # 0 -> L | CCW
         (1, 0): ((+0, +2), (+0, -1), (-1, +2), (+2, -1)),  # R -> 0 | CCW
         (1, 2): ((+0, -1), (+0, +2), (-2, -1), (+1, +2)),  # R -> 2 | CW
@@ -225,6 +225,22 @@ class SRS(RotationSystem):
         (3, 0): ((+0, +1), (+0, -2), (+2, +1), (-1, -2)),  # L -> 0 | CW
         (3, 2): ((+0, -2), (+0, +1), (+1, -2), (-2, +1)),  # L -> 2 | CCW
     }
+
+    tetrio_i_kicks: ClassVar[KickTable] = {  # symetrical i kicks (SRS+)
+        (0, 1): ((+0, +1), (+0, -2), (+1, -2), (-2, +1)),  # 0 -> R | CW
+        (0, 3): ((+0, -1), (+0, +2), (+1, +2), (-2, -1)),  # 0 -> L | CCW
+        (1, 0): ((+0, -1), (+0, +2), (+2, -1), (-1, +2)),  # R -> 0 | CCW
+        (1, 2): ((+0, -1), (+0, +2), (-2, -1), (+1, +2)),  # R -> 2 | CW
+        (2, 1): ((+0, -2), (+0, +1), (-1, -2), (+2, +1)),  # 2 -> R | CCW
+        (2, 3): ((+0, +2), (+0, -1), (-1, +2), (+2, -1)),  # 2 -> L | CW
+        (3, 0): ((+0, +1), (+0, -2), (+2, +1), (-1, -2)),  # L -> 0 | CW
+        (3, 2): ((+0, +1), (+0, -2), (-2, +1), (+1, -2)),  # L -> 2 | CCW
+    }
+
+    def __init__(self, board: Board):
+        super().__init__(board)
+
+        self.rules = Ruleset(Rule("tetrio", bool, False), name="srs")
 
     def spawn(self, piece: PieceType) -> Piece:  # noqa: D102
         mx, my = self.board.shape
@@ -267,7 +283,10 @@ class SRS(RotationSystem):
         elif (piece.r, to_r) in self.kicks:
             # if piece overlaps with something, try to kick it
             if piece.type == PieceType.I:
-                table = self.i_kicks
+                if self.rules.tetrio:
+                    table = self.tetrio_i_kicks
+                else:
+                    table = self.i_kicks
 
             else:
                 table = self.kicks
