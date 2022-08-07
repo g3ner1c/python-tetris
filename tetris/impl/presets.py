@@ -70,7 +70,7 @@ class TetrioEngine(ModernEngine):
             scorer.GuidelineScorer,
         )
 
-    def rotation_system(self, game: BaseGame) -> rotation.SRS:  # noqa: D102
+    def rotation_system(self, game: BaseGame) -> rotation.TetrioSRS:  # noqa: D102
         return rotation.TetrioSRS(board=game.board)
 
 
