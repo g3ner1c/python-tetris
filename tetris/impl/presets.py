@@ -52,6 +52,28 @@ class ModernEngine(Engine):
         return gravity.InfinityGravity(game=game)
 
 
+class TetrioEngine(ModernEngine):
+    """TETR.IO-specific engine implementation."""
+
+    def _get_types(
+        self,
+    ) -> tuple[
+        type[gravity.InfinityGravity],
+        type[queue.SevenBag],
+        type[rotation.TetrioSRS],
+        type[scorer.GuidelineScorer],
+    ]:  # noqa: D102
+        return (
+            gravity.InfinityGravity,
+            queue.SevenBag,
+            rotation.TetrioSRS,
+            scorer.GuidelineScorer,
+        )
+
+    def rotation_system(self, game: BaseGame) -> rotation.SRS:  # noqa: D102
+        return rotation.TetrioSRS(board=game.board)
+
+
 class NESEngine(Engine):
     """1989 Nintendo NES Tetris engine implementation."""
 

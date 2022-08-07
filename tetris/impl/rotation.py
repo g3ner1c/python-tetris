@@ -286,14 +286,6 @@ class SRS(RotationSystem):
         piece.minos = self.shapes[piece.type][piece.r]
 
 
-_Tetrio_override = {
-    (0, 2): ((-1, +0), (-1, +1), (-1, -1), (+0, +1), (+0, -1)),
-    (1, 3): ((+0, +1), (-2, +1), (-1, +1), (-2, +0), (-1, +0)),
-    (2, 0): ((+1, +0), (+1, -1), (+1, +1), (+0, -1), (+0, +1)),
-    (3, 1): ((+0, -1), (-2, -1), (-1, -1), (-2, +0), (-1, +0)),
-}
-
-
 class TetrioSRS(SRS):
     """TETR.IO's custom version of SRS.
 
@@ -313,13 +305,20 @@ class TetrioSRS(SRS):
         (3, 2): ((+0, +1), (+0, -2), (-2, +1), (+1, -2)),  # L -> 2 | CCW
     }
 
+    tetrio_180_kicks: ClassVar[KickTable] = {
+        (0, 2): ((-1, +0), (-1, +1), (-1, -1), (+0, +1), (+0, -1)),  # 0 -> 2
+        (1, 3): ((+0, +1), (-2, +1), (-1, +1), (-2, +0), (-1, +0)),  # R -> L
+        (2, 0): ((+1, +0), (+1, -1), (+1, +1), (+0, -1), (+0, +1)),  # 2 -> 0
+        (3, 1): ((+0, -1), (-2, -1), (-1, -1), (-2, +0), (-1, +0)),  # L -> R
+    }
+
     def __init__(self, board: Board):
         super().__init__(board)
 
         self.rules = Ruleset(Rule("srs_plus", bool, True), name="tetrio_srs")
 
     def rotate(self, piece: Piece, r: int) -> None:  # noqa: D102
-        # same code as SRS, but with SRS+ kick option
+        # same code as SRS, but with SRS+ and 180° kicks
 
         to_r = (piece.r + r) % 4
         minos = self.shapes[piece.type][to_r]
@@ -327,7 +326,7 @@ class TetrioSRS(SRS):
         if not self.overlaps(minos=minos, px=piece.x, py=piece.y):
             piece.r = to_r
 
-        elif (piece.r, to_r) in self.kicks:
+        elif (piece.r, to_r) in self.kicks | self.tetrio_180_kicks:
             if piece.type == PieceType.I:
                 if self.rules.srs_plus:
                     table = self.srs_plus_i_kicks
@@ -336,6 +335,8 @@ class TetrioSRS(SRS):
 
             else:
                 table = self.kicks
+
+            table |= self.tetrio_180_kicks  # add 180° kicks to table
 
             kicks = table[piece.r, to_r]
 
