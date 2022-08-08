@@ -12,6 +12,7 @@ def main(screen: curses.window) -> None:
     game = tetris.BaseGame()
 
     moves: dict[int, Move] = {
+        ord("a"): Move.rotate(2),
         ord("z"): Move.rotate(-1),
         curses.KEY_UP: Move.rotate(+1),
         curses.KEY_LEFT: Move.left(),
@@ -128,6 +129,7 @@ def main(screen: curses.window) -> None:
         for i, line in enumerate(
             [
                 "rotate          z / ↑",
+                "rotate 180°         a",
                 "move            ← / →",
                 "soft drop           ↓",
                 "hard drop           ␣",
@@ -137,7 +139,7 @@ def main(screen: curses.window) -> None:
                 "quit       Ctrl-C / q",
             ]
         ):
-            help_menu.addstr(i + 6, 6, line)
+            help_menu.addstr(i + 5, 6, line)
 
         help_menu.border()
 
