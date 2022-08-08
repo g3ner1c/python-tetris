@@ -139,7 +139,7 @@ def main(screen: curses.window) -> None:
                 "quit       Ctrl-C / q",
             ]
         ):
-            help_menu.addstr(i + 6, 6, line)
+            help_menu.addstr(i + 5, 6, line)
 
         help_menu.border()
 
