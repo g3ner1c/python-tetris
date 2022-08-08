@@ -258,30 +258,37 @@ class SRS(RotationSystem):
 
     def rotate(self, piece: Piece, r: int) -> None:  # noqa: D102
         to_r = (piece.r + r) % 4
-        minos = self.shapes[piece.type][to_r]  # sets minos to new rotated shape
+        minos = self.shapes[piece.type][to_r]  # new piece shape
 
         if not self.overlaps(minos=minos, px=piece.x, py=piece.y):
             # if piece doesn't overlap with anything, rotate it
             piece.r = to_r
+            piece.minos = minos
+            return
 
-        elif (piece.r, to_r) in self.kicks:
-            # if piece overlaps with something, try to kick it
-            if piece.type == PieceType.I:
-                table = self.i_kicks
+        # otherwise, try to kick it
+        if piece.type == PieceType.I:
+            table = self.i_kicks
+        else:
+            table = self.kicks
 
-            else:
-                table = self.kicks
+        self.kick_piece(table, piece, to_r)
 
-            kicks = table[piece.r, to_r]
+    def kick_piece(
+        self, table: KickTable, piece: Piece, to_r: int
+    ) -> None:  # noqa: D102
+        if not (piece.r, to_r) in table:
+            return
 
-            for x, y in kicks:
-                # for each offset, test if it's valid
-                if not self.overlaps(minos=minos, px=piece.x + x, py=piece.y + y):
-                    # if it's valid, kick it and break
-                    piece.x += x
-                    piece.y += y
-                    piece.r = to_r
-                    break
+        minos = self.shapes[piece.type][piece.r]
+        for x, y in table[piece.r, to_r]:
+            # for each offset, test if it's valid
+            if not self.overlaps(minos=minos, px=piece.x + x, py=piece.y + y):
+                # if it's valid, kick it and break
+                piece.x += x
+                piece.y += y
+                piece.r = to_r
+                break
 
         piece.minos = self.shapes[piece.type][piece.r]
 
@@ -294,6 +301,13 @@ class TetrioSRS(SRS):
     symmetrical I-piece kicks which is on by default, called *SRS+* in-game.
     """
 
+    tetrio_180_kicks: ClassVar[KickTable] = {
+        (0, 2): ((-1, +0), (-1, +1), (-1, -1), (+0, +1), (+0, -1)),  # 0 -> 2
+        (1, 3): ((+0, +1), (-2, +1), (-1, +1), (-2, +0), (-1, +0)),  # R -> L
+        (2, 0): ((+1, +0), (+1, -1), (+1, +1), (+0, -1), (+0, +1)),  # 2 -> 0
+        (3, 1): ((+0, -1), (-2, -1), (-1, -1), (-2, +0), (-1, +0)),  # L -> R
+    }
+
     srs_plus_i_kicks: ClassVar[KickTable] = {  # symmetrical I kicks (SRS+)
         (0, 1): ((+0, +1), (+0, -2), (+1, -2), (-2, +1)),  # 0 -> R | CW
         (0, 3): ((+0, -1), (+0, +2), (+1, +2), (-2, -1)),  # 0 -> L | CCW
@@ -304,13 +318,10 @@ class TetrioSRS(SRS):
         (3, 0): ((+0, +1), (+0, -2), (+2, +1), (-1, -2)),  # L -> 0 | CW
         (3, 2): ((+0, +1), (+0, -2), (-2, +1), (+1, -2)),  # L -> 2 | CCW
     }
+    srs_plus_i_kicks |= tetrio_180_kicks
 
-    tetrio_180_kicks: ClassVar[KickTable] = {
-        (0, 2): ((-1, +0), (-1, +1), (-1, -1), (+0, +1), (+0, -1)),  # 0 -> 2
-        (1, 3): ((+0, +1), (-2, +1), (-1, +1), (-2, +0), (-1, +0)),  # R -> L
-        (2, 0): ((+1, +0), (+1, -1), (+1, +1), (+0, -1), (+0, +1)),  # 2 -> 0
-        (3, 1): ((+0, -1), (-2, -1), (-1, -1), (-2, +0), (-1, +0)),  # L -> R
-    }
+    kicks = SRS.kicks | tetrio_180_kicks
+    i_kicks = SRS.i_kicks | tetrio_180_kicks
 
     def __init__(self, board: Board):
         super().__init__(board)
@@ -318,36 +329,22 @@ class TetrioSRS(SRS):
         self.rules = Ruleset(Rule("srs_plus", bool, True), name="tetrio_srs")
 
     def rotate(self, piece: Piece, r: int) -> None:  # noqa: D102
-        # same code as SRS, but with SRS+ and 180° kicks
-
         to_r = (piece.r + r) % 4
         minos = self.shapes[piece.type][to_r]
-
         if not self.overlaps(minos=minos, px=piece.x, py=piece.y):
             piece.r = to_r
+            piece.minos = minos
+            return
 
-        elif (piece.r, to_r) in self.kicks | self.tetrio_180_kicks:
-            if piece.type == PieceType.I:
-                if self.rules.srs_plus:
-                    table = self.srs_plus_i_kicks
-                else:
-                    table = self.i_kicks
-
+        if piece.type == PieceType.I:
+            if self.rules.srs_plus:
+                table = self.srs_plus_i_kicks
             else:
-                table = self.kicks
+                table = self.i_kicks
+        else:
+            table = self.kicks
 
-            table |= self.tetrio_180_kicks  # add 180° kicks to table
-
-            kicks = table[piece.r, to_r]
-
-            for x, y in kicks:
-                if not self.overlaps(minos=minos, px=piece.x + x, py=piece.y + y):
-                    piece.x += x
-                    piece.y += y
-                    piece.r = to_r
-                    break
-
-        piece.minos = self.shapes[piece.type][piece.r]
+        self.kick_piece(table, piece, to_r)
 
 
 class NRS(RotationSystem):
