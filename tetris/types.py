@@ -7,7 +7,7 @@ import enum
 import keyword
 import sys
 from collections.abc import Iterable
-from typing import Any, final, Optional, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, final
 
 import numpy as np
 from numpy.typing import NDArray

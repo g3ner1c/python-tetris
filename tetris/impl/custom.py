@@ -6,11 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from tetris.engine import Engine
-from tetris.engine import Gravity
-from tetris.engine import Queue
-from tetris.engine import RotationSystem
-from tetris.engine import Scorer
+from tetris.engine import Engine, Gravity, Queue, RotationSystem, Scorer
 from tetris.impl.gravity import InfinityGravity
 from tetris.impl.queue import SevenBag
 from tetris.impl.rotation import SRS

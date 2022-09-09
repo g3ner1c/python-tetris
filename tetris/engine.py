@@ -5,18 +5,10 @@ from __future__ import annotations
 import abc
 import random
 import secrets
-from collections.abc import Iterable
-from collections.abc import Iterator
-from collections.abc import Sequence
-from typing import Any, Optional, overload, TYPE_CHECKING
+from collections.abc import Iterable, Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Optional, overload
 
-from tetris.types import Board
-from tetris.types import Minos
-from tetris.types import MoveDelta
-from tetris.types import Piece
-from tetris.types import PieceType
-from tetris.types import Ruleset
-from tetris.types import Seed
+from tetris.types import Board, Minos, MoveDelta, Piece, PieceType, Ruleset, Seed
 
 if TYPE_CHECKING:
     from tetris import BaseGame

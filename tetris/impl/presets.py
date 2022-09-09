@@ -11,10 +11,7 @@ if TYPE_CHECKING:
 
 from collections.abc import Iterable
 
-from tetris.impl import gravity
-from tetris.impl import queue
-from tetris.impl import rotation
-from tetris.impl import scorer
+from tetris.impl import gravity, queue, rotation, scorer
 
 
 class ModernEngine(Engine):

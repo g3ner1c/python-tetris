@@ -10,17 +10,19 @@ import numpy as np
 
 from tetris.engine import Engine
 from tetris.impl.presets import ModernEngine
-from tetris.types import Board
-from tetris.types import MinoType
-from tetris.types import Move
-from tetris.types import MoveDelta
-from tetris.types import MoveKind
-from tetris.types import PartialMove
-from tetris.types import PieceType
-from tetris.types import PlayingStatus
-from tetris.types import Rule
-from tetris.types import Ruleset
-from tetris.types import Seed
+from tetris.types import (
+    Board,
+    MinoType,
+    Move,
+    MoveDelta,
+    MoveKind,
+    PartialMove,
+    PieceType,
+    PlayingStatus,
+    Rule,
+    Ruleset,
+    Seed,
+)
 
 
 class BaseGame:

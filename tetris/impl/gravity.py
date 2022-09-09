@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import time
-from typing import Final, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Final, Optional
 
 from tetris.engine import Gravity
-from tetris.types import Move
-from tetris.types import MoveDelta
-from tetris.types import MoveKind
+from tetris.types import Move, MoveDelta, MoveKind
 
 if TYPE_CHECKING:
     from tetris import BaseGame

@@ -2,8 +2,7 @@ import curses
 import time
 
 import tetris
-from tetris import MinoType
-from tetris import Move
+from tetris import MinoType, Move
 
 
 @curses.wrapper
