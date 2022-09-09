@@ -2,13 +2,12 @@
 
 import dataclasses
 import math
-import secrets
 from collections.abc import Iterable
 from typing import Any, Optional, Union
 
 import numpy as np
 
-from tetris.engine import Engine, EngineFactory, EnginePart, Parts
+from tetris.engine import Engine, EngineFactory, Parts
 from tetris.impl.presets import Modern
 from tetris.types import (
     Board,
@@ -145,8 +144,7 @@ class BaseGame:
             # Internally, we use 2x the height to "buffer" the board being
             # pushed above the view (e.g.: with garbage)
             self.board = np.zeros(
-                (self.rules.board_size[0] * 2, self.rules.board_size[1]),
-                dtype=np.int8
+                (self.rules.board_size[0] * 2, self.rules.board_size[1]), dtype=np.int8
             )
         else:
             self.board = board
@@ -165,8 +163,8 @@ class BaseGame:
         self.rs = self.engine.rotation_system.from_game(self)
         self.scorer = self.engine.scorer.from_game(self, score, level)
 
-        for part in (self.gravity, self.queue, self.rs, self.scorer):
-            if rules := getattr(part, "rules", None):
+        for i in (self.gravity, self.queue, self.rs, self.scorer):
+            if rules := getattr(i, "rules", None):
                 self.rules.register(rules)
 
         self.rules.override(rule_overrides)  # BaseGame overrides get priority
@@ -199,6 +197,7 @@ class BaseGame:
 
     @property
     def seed(self) -> Seed:
+        """The random seed being used, shorthand for `queue.seed`."""
         return self.queue.seed
 
     @property
@@ -296,7 +295,7 @@ class BaseGame:
             return
         if state or (state is None and self.playing):
             self.status = PlayingStatus.idle
-        elif not state or (state is None and self.paused):
+        elif state is False or (state is None and self.paused):
             self.status = PlayingStatus.playing
 
     def _lose(self) -> None:

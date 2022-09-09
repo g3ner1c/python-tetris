@@ -15,7 +15,7 @@ Modern = EngineFactory(
 Tetrio = EngineFactory(
     gravity=gravity.InfinityGravity,
     queue=queue.SevenBag,
-    rotation=rotation.TetrioSRS,
+    rotation_system=rotation.TetrioSRS,
     scorer=scorer.GuidelineScorer,
 )
 

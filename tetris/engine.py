@@ -15,12 +15,7 @@ if TYPE_CHECKING:
     from tetris import BaseGame
 
 Self = Any  # Only in 3.11
-Parts = tuple[
-    type["Gravity"],
-    type["Queue"],
-    type["RotationSystem"],
-    type["Scorer"]
-]
+Parts = tuple[type["Gravity"], type["Queue"], type["RotationSystem"], type["Scorer"]]
 
 __all__ = (
     "Engine",
@@ -35,6 +30,22 @@ __all__ = (
 @final
 @dataclasses.dataclass(frozen=True)
 class EngineFactory:
+    """Factory object for mutable engine types.
+
+    `EngineFactory` objects are immutable, while `Engine` objects are not. The
+    latter is found in `BaseGame.engine`. This is useful to maintain a preset
+    (like in `tetris.impl.presets`) shared to multiple games, while still
+    letting parts be switched in running games (though, nothing will happen
+    until a `BaseGame.reset` call).
+
+    Attributes
+    ----------
+    gravity : Gravity class
+    queue : Queue class
+    rotation_system : RotationSystem class
+    scorer : Scorer class
+    """
+
     __slots__ = ("gravity", "queue", "rotation_system", "scorer")
 
     gravity: type[Gravity]
@@ -43,15 +54,27 @@ class EngineFactory:
     scorer: type[Scorer]
 
     def build(self) -> Engine:
+        """Build an `Engine` object."""
         return Engine(*self.parts())
 
     def parts(self) -> Parts:
+        """Return a tuple of the parts used in this object."""
         return self.gravity, self.queue, self.rotation_system, self.scorer
 
 
 @final
 @dataclasses.dataclass
 class Engine:
+    """Dataclass holding core game logic.
+
+    Attributes
+    ----------
+    gravity : Gravity class
+    queue : Queue class
+    rotation_system : RotationSystem class
+    scorer : Scorer class
+    """
+
     __slots__ = ("gravity", "queue", "rotation_system", "scorer")
 
     gravity: type[Gravity]
@@ -60,6 +83,7 @@ class Engine:
     scorer: type[Scorer]
 
     def parts(self) -> Parts:
+        """Return a tuple of the parts used in this object."""
         return self.gravity, self.queue, self.rotation_system, self.scorer
 
 
