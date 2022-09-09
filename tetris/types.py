@@ -7,7 +7,7 @@ import enum
 import keyword
 import sys
 from collections.abc import Iterable
-from typing import Any, final, Optional, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, final
 
 import numpy as np
 from numpy.typing import NDArray
@@ -166,6 +166,11 @@ class Ruleset:
     def __dir__(self) -> Iterable[str]:
         yield from object.__dir__(self)
         yield from self._rules.keys()
+
+    def __repr__(self) -> str:
+        return "<Ruleset (%s)>" % (
+            ", ".join(f"{n}={r.value}" for n, r in self._rules.items())
+        )
 
 
 class PlayingStatus(enum.Enum):

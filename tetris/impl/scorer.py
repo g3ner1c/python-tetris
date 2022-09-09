@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from tetris.engine import Scorer
-from tetris.types import MoveDelta
-from tetris.types import MoveKind
-from tetris.types import PieceType
+from tetris.types import MoveDelta, MoveKind, PieceType
 
 if TYPE_CHECKING:
     from tetris.game import BaseGame
