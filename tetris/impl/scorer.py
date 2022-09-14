@@ -32,7 +32,6 @@ class GuidelineScorer(Scorer):
         self.back_to_back = 0
 
     def judge(self, delta: MoveDelta) -> None:  # noqa: D102
-
         if delta.kind == MoveKind.soft_drop:  # soft drop
             if not delta.auto:
                 self.score += delta.x

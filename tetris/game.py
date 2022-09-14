@@ -144,7 +144,8 @@ class BaseGame:
             # Internally, we use 2x the height to "buffer" the board being
             # pushed above the view (e.g.: with garbage)
             self.board = np.zeros(
-                (self.rules.board_size[0] * 2, self.rules.board_size[1]), dtype=np.int8
+                (self.rules.board_size[0] * 2, self.rules.board_size[1]),
+                np.int8,
             )
         else:
             self.board = board
