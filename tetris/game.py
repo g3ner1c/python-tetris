@@ -345,6 +345,7 @@ class BaseGame:
 
         self.hold, self.piece = self.piece.type, self.rs.spawn(self.hold)
         self.hold_lock = True
+        assert not self.rs.overlaps(self.piece), "piece<-rs.spawn overlaps!"
 
     def _move_relative(self, x: int = 0, y: int = 0) -> None:
         self._move(self.piece.x + x, self.piece.y + y)
@@ -377,6 +378,7 @@ class BaseGame:
         y = self.piece.y
         r = self.piece.r
         self.rs.rotate(self.piece, turns)
+        assert not self.rs.overlaps(self.piece), "rs.rotate overlaps!"
         self.delta.x = x - self.piece.x
         self.delta.y = y - self.piece.y
         self.delta.r = r - self.piece.r

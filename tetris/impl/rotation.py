@@ -275,7 +275,7 @@ class SRS(RotationSystem):
         if not (piece.r, to_r) in table:
             return
 
-        minos = self.shapes[piece.type][piece.r]
+        minos = self.shapes[piece.type][to_r]
         for x, y in table[piece.r, to_r]:
             # for each offset, test if it's valid
             if not self.overlaps(minos=minos, px=piece.x + x, py=piece.y + y):
