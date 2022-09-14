@@ -59,8 +59,7 @@ Usage:
 
 Flags:
     -h, --help         This message!
-    -p, --path [PATH]  Specify directory to store data, or output it and exit
-                       if not given. Default is os-dependent
+    -p, --path <PATH>  Specify directory to store data [default: os-dependent]
     --regen            Clear user data and add defaults
     --version          Output the version and exit\
 """
@@ -143,8 +142,12 @@ class TetrisTUI:
             else:
                 self.path = Path(config)
                 self.path.mkdir(exist_ok=True)
-                with open(self.path / FQDN) as f:
-                    self.cfg.read_string(f.read())
+                try:
+                    with open(self.path / "tetris.conf", "x") as f:
+                        self.cfg.write(f)
+                except FileExistsError:
+                    with open(self.path / "tetris.conf") as f:
+                        self.cfg.read_string(f.read())
         else:
             self.path = guess_data_path()
             if self.path is not None:
@@ -570,7 +573,7 @@ def main():
     """Entry point."""
     try:
         opts, args = getopt.getopt(
-            sys.argv[1:], "hp", ["help", "version", "path", "regen"]
+            sys.argv[1:], "hp:", ["help", "version", "path=", "regen"]
         )
 
     except getopt.GetoptError as e:
