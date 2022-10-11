@@ -1,3 +1,5 @@
+"""2-dimensional array object implementation."""
+
 from __future__ import annotations
 
 import array
@@ -9,9 +11,10 @@ from tetris.types import MinoType, PieceType
 
 
 class Board:
+    """2-dimensional array object."""
+
     __slots__ = (
         "_shape",
-        "_size",
         "_ndim",
         "_offset",
         "_strides",
@@ -19,6 +22,10 @@ class Board:
         "_data",
         "__array_interface__",
     )
+
+    # TODO: make a user-friendly initializer (accepting initial data) and hide
+    #       the current stuff behind a private method (also completely disallow
+    #       1d boards from it)
 
     def __init__(
         self,
@@ -46,7 +53,6 @@ class Board:
             strides = shape[1:] + (1,)
 
         self._shape = shape
-        self._size = math.prod(shape)
         self._ndim = len(shape)
         self._offset = offset
         self._strides = strides
@@ -56,7 +62,7 @@ class Board:
                 self._base = _base._base
             self._data = _base._data
         else:
-            self._data = array.array("B", bytes(self._size))
+            self._data = array.array("B", bytes(math.prod(shape)))
             self._base = None
 
         # allows seamless integration with numpy
@@ -70,14 +76,40 @@ class Board:
             "version": 3,
         }
 
+    @property
+    def shape(self) -> tuple[int, int]:
+        """The board's shape."""
+        return self._shape
+
+    @property
+    def base(self) -> Optional[Board]:
+        """The board storing the actual data, if it is not this one.
+
+        When indexing the array, no data is copied, instead, a view onto the
+        original data is created. This attribute contains the original board
+        if this board is a view.
+        """
+        return self._base
+
+    # TODO: is `_offset` and `_strides` of any interest to be public? and is
+    #       `_data` useful too, if `tobytes` exists?
+
     def tobytes(self) -> bytes:
-        return self._data.tobytes()
+        """Return a copy of this board as a bytes object.
+
+        Currently this can only return the data in C-style (row-major) order.
+
+        Returns
+        -------
+        bytes
+        """
+        return self._data[
+            self._offset : self._offset
+            + self._strides[0] * self._shape[0] : self._strides[0]
+        ].tobytes()
 
     def __getitem__(self, key: Union[int, slice, tuple[int, int]]) -> Union[Board, int]:
         # TODO: tuples with slices? might be unnecessary
-
-        if key == () or key == slice(None):
-            return Board(self._shape, self._offset, self._strides, _base=self)
 
         if isinstance(key, int):
             if key < 0:
@@ -112,7 +144,7 @@ class Board:
             a, b = key
             if not isinstance(a, int) or not isinstance(b, int):
                 raise TypeError(
-                    "board indices must be integers, slices or tuples of " "integers"
+                    "board indices must be integers, slices or tuples of integers"
                 )
 
             if a < 0:
@@ -152,16 +184,17 @@ class Board:
                 if not hasattr(value, "__index__"):
                     raise TypeError("board values may only be ints")
                 offset = self._offset + key * self._strides[0]
-                for i in range(
-                    offset, offset + self._shape[1], self._strides[1]
-                ):
+                for i in range(offset, offset + self._shape[1], self._strides[1]):
                     self._data[i] = int(value)
         elif isinstance(key, slice):
             raise NotImplementedError  # TODO
         elif isinstance(key, tuple):
             raise NotImplementedError  # TODO
         else:
-            raise TypeError
+            raise TypeError(
+                f"board incides must be integers, slices or tuples of"
+                f"integers, not {type(key).__name__}"
+            )
 
     def __iter__(self):
         if self._ndim == 1:
@@ -172,14 +205,9 @@ class Board:
             for i in range(
                 self._offset,
                 self._offset + self._strides[0] * self._shape[0],
-                self._strides[0]
+                self._strides[0],
             ):
-                yield Board(
-                    (self._shape[1],),
-                    i,
-                    (self._strides[1],),
-                    _base=self,
-                )
+                yield Board((self._shape[1],), i, (self._strides[1],), _base=self)
 
     def __len__(self):
         return self._shape[0]
