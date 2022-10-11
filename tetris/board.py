@@ -5,6 +5,8 @@ import math
 import warnings
 from typing import Optional, Union
 
+from tetris.types import MinoType, PieceType
+
 
 class Board:
     __slots__ = (
@@ -20,15 +22,12 @@ class Board:
 
     def __init__(
         self,
-        shape: tuple[int, int] | tuple[int] | int,
+        shape: Union[tuple[int, int], tuple[int]],
         offset: int = 0,
-        strides: Optional[tuple[int, int] | tuple[int]] = None,
+        strides: Optional[Union[tuple[int, int], tuple[int]]] = None,
         *,
         _base: Optional[Board] = None,
     ):
-        if isinstance(shape, int):
-            shape = (shape,)
-
         if not 0 < len(shape) <= 2:
             raise ValueError("shape must contain 1 or 2 items")
 
@@ -74,14 +73,11 @@ class Board:
     def tobytes(self) -> bytes:
         return self._data.tobytes()
 
-    def __getitem__(
-        self, key: Union[int, slice, tuple[Union[int, slice], ...]]
-    ) -> Union[Board, int]:
-        if isinstance(key, tuple):
-            if len(key) > self._ndim:
-                raise IndexError(f"too many indices for {self._ndim}d board")
-            if len(key) == 1:
-                key = key[0]
+    def __getitem__(self, key: Union[int, slice, tuple[int, int]]) -> Union[Board, int]:
+        # TODO: tuples with slices? might be unnecessary
+
+        if key == () or key == slice(None):
+            return Board(self._shape, self._offset, self._strides, _base=self)
 
         if isinstance(key, int):
             if key < 0:
@@ -100,10 +96,72 @@ class Board:
             )
 
         if isinstance(key, slice):
-            ...
+            start, stop, step = key.indices(self._shape[0])
+
+            return Board(
+                (max(math.ceil((stop - start) / step), 0), *self._shape[1:]),
+                self._offset + start * self._strides[0],
+                (self._strides[0] * step, *self._strides[1:]),
+                _base=self,
+            )
 
         if isinstance(key, tuple):
-            ...
+            if self._ndim != 2 or len(key) != 2:
+                raise ValueError("can only index 2d arrays with 2-tuples")
+
+            a, b = key
+            if not isinstance(a, int) or not isinstance(b, int):
+                raise TypeError(
+                    "board indices must be integers, slices or tuples of " "integers"
+                )
+
+            if a < 0:
+                a += self._shape[0]
+            if b < 0:
+                b += self._shape[1]
+            if not (0 <= a < self._shape[0] and 0 <= b < self._shape[1]):
+                raise IndexError("board index out of range")
+
+            return self._data[
+                self._offset + a * self._strides[0] + b * self._strides[1]
+            ]
+
+        raise TypeError(
+            f"board incides must be integers, slices or tuples of integers, "
+            f"not {type(key).__name__}"
+        )
+
+    def __setitem__(
+        self, key: Union[int, slice, tuple[int, int]], value: Union[Board, int]
+    ):
+        if isinstance(key, int):
+            if key < 0:
+                key += self._shape[0]
+            if not 0 <= key < self._shape[0]:
+                raise IndexError("board assignment index out of range")
+
+            if self._ndim == 1:
+                if hasattr("__len__", value):
+                    raise TypeError("can't assign sequence to element index")
+                if not hasattr(value, "__index__"):
+                    raise TypeError("board values may only be ints")
+                self._data[self._offset + key * self._strides[0]] = int(value)
+            elif hasattr(value, "__len__"):
+                raise NotImplementedError  # TODO
+            else:
+                if not hasattr(value, "__index__"):
+                    raise TypeError("board values may only be ints")
+                offset = self._offset + key * self._strides[0]
+                for i in range(
+                    offset, offset + self._shape[1], self._strides[1]
+                ):
+                    self._data[i] = int(value)
+        elif isinstance(key, slice):
+            raise NotImplementedError  # TODO
+        elif isinstance(key, tuple):
+            raise NotImplementedError  # TODO
+        else:
+            raise TypeError
 
     def __iter__(self):
         if self._ndim == 1:
@@ -112,7 +170,9 @@ class Board:
             ]
         else:
             for i in range(
-                self._offset, self._strides[0] * self._shape[0], self._strides[0]
+                self._offset,
+                self._offset + self._strides[0] * self._shape[0],
+                self._strides[0]
             ):
                 yield Board(
                     (self._shape[1],),
@@ -123,3 +183,27 @@ class Board:
 
     def __len__(self):
         return self._shape[0]
+
+    def __repr__(self) -> str:
+        tiles = {
+            MinoType.EMPTY: ".",
+            MinoType.GHOST: "@",
+            MinoType.GARBAGE: "X",
+        }
+        text = ""
+
+        if self._ndim == 1:
+            for i in self:
+                text += tiles.get(i) or PieceType(i).name
+                text += " "
+        else:
+            for line in self:
+                text += "        "
+                for i in line:
+                    text += tiles.get(i) or PieceType(i).name
+                    text += " "
+                text += "\n"
+
+        text = text.lstrip(" ")
+        text = text.rstrip("\n")
+        return f"<Board [{text}])>"
