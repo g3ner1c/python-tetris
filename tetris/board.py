@@ -7,6 +7,7 @@ from __future__ import annotations
 import array
 import math
 import warnings
+from collections.abc import Iterator
 from typing import Optional, Union
 
 from tetris.types import MinoType, PieceType
@@ -97,8 +98,26 @@ class Board:
         """
         return self._base
 
-    # TODO: is `_offset` and `_strides` of any interest to be public? and is
-    #       `_data` useful too, if `tobytes` exists?
+    @property
+    def data(self) -> array.array:
+        """The board's raw data, as an `array.array`.
+
+        This is always a copy. For views, this only contains the elements it
+        has access to.
+        """
+        start = self._offset
+        stop = self._offset + self._strides[0] * self._shape[0]
+        stride = self._strides[0]
+        if self._ndim == 1:
+            return self._data[start:stop:stride]
+        arr = array.array("B")
+        for i in range(start, stop, stride):
+            arr += self._data[
+                i :
+                i + self._strides[1] * self._shape[1] :
+                self._strides[1]
+            ]  # fmt: skip
+        return arr
 
     def tobytes(self) -> bytes:
         """Return a copy of this board as a bytes object.
@@ -109,10 +128,12 @@ class Board:
         -------
         bytes
         """
-        return self._data[
-            self._offset : self._offset
-            + self._strides[0] * self._shape[0] : self._strides[0]
-        ].tobytes()
+        return self.data.tobytes()
+
+    def copy(self) -> Board:
+        new = Board(self._shape)
+        new._data[:] = self.data
+        return new
 
     def _normalize_index(
         self, key: Union[int, slice, tuple[int, int]]
@@ -150,7 +171,7 @@ class Board:
 
         raise TypeError(_BAD_INDEX_TYPE.format(type(k).__name__))
 
-    def _contiguous_blocks(self, key: slice):
+    def _contiguous_blocks(self, key: slice) -> Iterator[tuple[int, int, int]]:
         """Yield largest contiguous blocks for a given slice."""
         start, stop, step = key.indices(self._shape[0])
         stride = self._strides[0] * step
@@ -158,9 +179,9 @@ class Board:
         length = stride * max(math.ceil((stop - start) / step), 0)
         if self._ndim == 1:
             yield (offset, offset + length, stride)
-        else:
-            for i in range(offset, offset + length, stride):
-                yield (i, i + self._strides[1] * self._shape[1], self._strides[1])
+            return
+        for i in range(offset, offset + length, stride):
+            yield (i, i + self._strides[1] * self._shape[1], self._strides[1])
 
     def __getitem__(self, key: Union[int, slice, tuple[int, int]]) -> Union[Board, int]:
         # TODO: tuples with slices? might be unnecessary
@@ -246,7 +267,7 @@ class Board:
             for i in range(start, stop, stride):
                 yield Board((self._shape[1],), i, (self._strides[1],), _base=self)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self._shape[0]
 
     def __repr__(self) -> str:
