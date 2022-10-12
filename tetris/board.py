@@ -13,27 +13,28 @@ from tetris.types import MinoType, PieceType
 
 _BAD_INDEX_TYPE = "board indices must be integers, slices or tuples of integers, not {}"
 _OUT_OF_BOUNDS = "board index {} out of bounds for axis {}"
+_BAD_VALUE_TYPE = "board values must be integers"
 
 
 def _normalize_index(
-    shape: tuple[int, int] | tuple[int], key: Union[int, slice, tuple[int, int]]
+    shape: tuple[int, ...], key: Union[int, slice, tuple[int, int]]
 ) -> Union[int, slice, tuple[int, int]]:
-    k = key
-    if hasattr(k, "__index__"):
-        k = int(k)
+    """Apply various checks and convert things like negative indices."""
+    if hasattr(key, "__index__"):
+        k = int(key)  # type: ignore[arg-type]
         if k < 0:
             k += shape[0]
         if not 0 <= k < shape[0]:
             raise IndexError(_OUT_OF_BOUNDS.format(key, 0))
         return k
 
-    if isinstance(k, slice):
-        return k
+    if isinstance(key, slice):
+        return key
 
-    if isinstance(k, tuple):
-        if len(shape) != 2 or len(k) != 2:
+    if isinstance(key, tuple):
+        if len(shape) != 2 or len(key) != 2:
             raise ValueError("can only index 2d arrays with 2-tuples")
-        a, b = k
+        a, b = key
         if not hasattr(a, "__index__") or not hasattr(b, "__index__"):
             raise TypeError(
                 _BAD_INDEX_TYPE.format(f"({type(a).__name__}, {type(b).__name__})")
@@ -47,7 +48,7 @@ def _normalize_index(
             b += shape[1]
         if not 0 <= b < shape[1]:
             raise IndexError(_OUT_OF_BOUNDS.format(key[1], 1))
-        return k
+        return a, b
 
     raise TypeError(_BAD_INDEX_TYPE.format(type(k).__name__))
 
@@ -71,9 +72,9 @@ class Board:
 
     def __init__(
         self,
-        shape: Union[tuple[int, int], tuple[int]],
+        shape: tuple[int, ...],
         offset: int = 0,
-        strides: Optional[Union[tuple[int, int], tuple[int]]] = None,
+        strides: Optional[tuple[int, ...]] = None,
         *,
         _base: Optional[Board] = None,
     ):
@@ -90,19 +91,19 @@ class Board:
                 stacklevel=2,
             )
 
-        if strides is None:
-            # incorrect for >=3d
-            strides = shape[1:] + (1,)
-
         self._shape = shape
         self._ndim = len(shape)
         self._offset = offset
-        self._strides = strides
+        if strides is None:
+            # incorrect for >=3d
+            self._strides = shape[1:] + (1,)
+        else:
+            self._strides = strides
         self._base = _base
         if _base is not None:
             if _base._base is not None:
                 self._base = _base._base
-            self._data = _base._data
+            self._data: array.array = _base._data
         else:
             self._data = array.array("B", bytes(math.prod(shape)))
             self._base = None
@@ -111,15 +112,15 @@ class Board:
         # https://numpy.org/doc/1.23/reference/arrays.interface.html#python-side
         self.__array_interface__ = {
             "data": self._data,
-            "offset": offset,
-            "shape": shape,
-            "strides": strides,
+            "offset": self._offset,
+            "shape": self._shape,
+            "strides": self._strides,
             "typestr": "|u1",
             "version": 3,
         }
 
     @property
-    def shape(self) -> tuple[int, int]:
+    def shape(self) -> tuple[int, ...]:
         """The board's shape."""
         return self._shape
 
@@ -184,34 +185,40 @@ class Board:
 
     def __setitem__(
         self, key: Union[int, slice, tuple[int, int]], value: Union[Board, int]
-    ):
+    ) -> None:
         key = _normalize_index(self._shape, key)
 
         if isinstance(key, int):
             if self._ndim == 1:
-                if hasattr("__len__", value):
+                if hasattr(value, "__len__"):
                     raise TypeError("can't assign sequence to element index")
                 if not hasattr(value, "__index__"):
-                    raise TypeError("board values may only be ints")
-                self._data[self._offset + key * self._strides[0]] = int(value)
+                    raise TypeError(_BAD_VALUE_TYPE)
+                self._data[self._offset + key * self._strides[0]] = int(
+                    value  # type: ignore[arg-type]
+                )
             elif hasattr(value, "__len__"):
                 raise NotImplementedError  # TODO
             else:
                 if not hasattr(value, "__index__"):
-                    raise TypeError("board values may only be ints")
+                    raise TypeError(_BAD_VALUE_TYPE)
                 offset = self._offset + key * self._strides[0]
                 for i in range(offset, offset + self._shape[1], self._strides[1]):
-                    self._data[i] = int(value)
+                    self._data[i] = int(value)  # type: ignore[arg-type]
+
         elif isinstance(key, slice):
             raise NotImplementedError  # TODO
+
         elif isinstance(key, tuple):
             a, b = key
             if not hasattr(value, "__index__"):
-                raise TypeError("board values may only be ints")
+                raise TypeError(_BAD_VALUE_TYPE)
 
             self._data[
                 self._offset + a * self._strides[0] + b * self._strides[1]
-            ] = int(value)
+            ] = int(
+                value  # type: ignore[arg-type]
+            )
 
     def __iter__(self):
         start = self._offset
