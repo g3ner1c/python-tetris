@@ -5,12 +5,10 @@ import math
 from collections.abc import Iterable
 from typing import Any, Optional, Union
 
-import numpy as np
-
+from tetris.board import Board
 from tetris.engine import Engine, EngineFactory, Parts
 from tetris.impl.presets import Modern
 from tetris.types import (
-    Board,
     MinoType,
     Move,
     MoveDelta,
@@ -39,7 +37,7 @@ class BaseGame:
         Mapping of rule names to overriden values.
 
         .. seealso:: `Ruleset`, `Rule`
-    board : tetris.types.Board, optional
+    board : tetris.board.Board, optional
         A 2D `numpy.ndarray` with scalar `numpy.int8`, given as the
         initial board data. Optional, defaults to making a new board.
 
@@ -143,9 +141,8 @@ class BaseGame:
         if board is None:
             # Internally, we use 2x the height to "buffer" the board being
             # pushed above the view (e.g.: with garbage)
-            self.board = np.zeros(
+            self.board = Board.zeros(
                 (self.rules.board_size[0] * 2, self.rules.board_size[1]),
-                np.int8,
             )
         else:
             self.board = board
@@ -268,7 +265,6 @@ class BaseGame:
             board[x + ghost_x, y + piece.y] = 8
             board[x + piece.x, y + piece.y] = piece.type
 
-        board.flags.writeable = False
         return board[-self.height - buffer_lines :]
 
     def reset(self) -> None:
