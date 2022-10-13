@@ -7,7 +7,7 @@ from __future__ import annotations
 import array
 import math
 from collections.abc import Iterator
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, overload
 
 from tetris.types import MinoType, PieceType
 
@@ -23,6 +23,14 @@ _INHOMOGENEOUS_SEQ = "the given sequence is not homogeneous. can't create board"
 class Board:
     """2-dimensional array object."""
 
+    # https://github.com/python/mypy/issues/1021
+    _shape: tuple[int, ...]
+    _ndim: int
+    _offset: int
+    _strides: tuple[int, ...]
+    _base: Optional[Board]
+    _data: array.array
+
     __slots__ = (
         "_shape",
         "_ndim",
@@ -32,7 +40,8 @@ class Board:
         "_data",
     )
 
-    def __new__(cls, obj: Any, copy: bool = True):
+    def __new__(cls, obj: Any, copy: bool = True) -> Board:
+        """Create and return a new board object."""
         if isinstance(obj, Board):
             if copy:
                 return obj.copy()
@@ -56,7 +65,7 @@ class Board:
             return self
 
         if hasattr(obj, "__len__"):
-            shape = (len(obj),)
+            shape: tuple[int, ...] = (len(obj),)
             if shape[0] == 0:
                 raise ValueError(_BAD_AXIS_LENGTH.format(0))
             if hasattr(obj[0], "__len__"):
@@ -97,7 +106,14 @@ class Board:
         raise TypeError(f"can't convert {obj} into {cls.__name__}")
 
     @classmethod
-    def zeros(cls, shape: tuple[int, int]) -> Board:
+    def zeros(cls, shape: tuple[int, ...]) -> Board:
+        """Create a new board initialised with zeros.
+
+        Parameters
+        ----------
+        shape : tuple of ints
+            The board's shape. must have 1 or 2 non-zero values.
+        """
         if not 0 < len(shape) <= 2:
             raise ValueError(_WRONG_DIMENSIONS)
         for i, x in enumerate(shape):
@@ -194,6 +210,7 @@ class Board:
         return self.data.tobytes()
 
     def copy(self) -> Board:
+        """Return a copy of this board as another board."""
         new = object.__new__(Board)
         new._shape = self._shape
         new._ndim = self._ndim
@@ -250,6 +267,18 @@ class Board:
             return
         for i in range(offset, offset + length, stride):
             yield (i, i + self._strides[1] * self._shape[1], self._strides[1])
+
+    @overload
+    def __getitem__(self, key: slice) -> Board:
+        ...
+
+    @overload
+    def __getitem__(self, key: tuple[int, int]) -> int:
+        ...
+
+    @overload
+    def __getitem__(self, key: int) -> Union[Board, int]:
+        ...
 
     def __getitem__(self, key: Union[int, slice, tuple[int, int]]) -> Union[Board, int]:
         # TODO: tuples with slices? might be unnecessary
