@@ -347,7 +347,7 @@ class Board:
                 length = self._shape[1]
                 stride = self._strides[1]
                 arr = _broadcast(value, (self._shape[1],))
-                self._data[offset:offset+length:stride] = arr.data
+                self._data[offset : offset + length : stride] = arr.data
             else:
                 if not hasattr(value, "__index__"):
                     raise TypeError(_BAD_VALUE_TYPE)
@@ -367,7 +367,7 @@ class Board:
                 x = 0
                 for start, stop, step in self._contiguous_blocks(key):
                     length = len(self._data[start:stop:step])
-                    self._data[start:stop:step] = arr._data[x:x+length]
+                    self._data[start:stop:step] = arr._data[x : x + length]
                     x += length
             else:
                 if not hasattr(value, "__index__"):
