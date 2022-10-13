@@ -6,15 +6,18 @@ from __future__ import annotations
 
 import array
 import math
-import warnings
 from collections.abc import Iterator
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from tetris.types import MinoType, PieceType
 
 _BAD_INDEX_TYPE = "board indices must be integers, slices or tuples of integers, not {}"
 _OUT_OF_BOUNDS = "board index {} out of bounds for axis {}"
 _BAD_VALUE_TYPE = "board values must be integers"
+_BAD_BROADCAST = "can't broadcast board from shape {} into {}"
+_WRONG_DIMENSIONS = "boards can only have 1 or 2 dimensions"
+_BAD_AXIS_LENGTH = "board axis {} must have non-zero length"
+_INHOMOGENEOUS_SEQ = "the given sequence is not homogeneous. can't create board"
 
 
 class Board:
@@ -27,54 +30,112 @@ class Board:
         "_strides",
         "_base",
         "_data",
-        "__array_interface__",
     )
 
-    # TODO: make a user-friendly initializer (accepting initial data) and hide
-    #       the current stuff behind a private method (also completely disallow
-    #       1d boards from it)
+    def __new__(cls, obj: Any, copy: bool = True):
+        if isinstance(obj, Board):
+            if copy:
+                return obj.copy()
+            return obj[:]
 
-    def __init__(
-        self,
-        shape: tuple[int, ...],
-        offset: int = 0,
-        strides: Optional[tuple[int, ...]] = None,
-        *,
-        _base: Optional[Board] = None,
-    ):
+        if hasattr(obj, "__array__"):
+            import numpy as np
+
+            arr = obj.__array__(np.int8)
+            if not isinstance(arr, np.ndarray):
+                raise TypeError("obj.__array__ did not return ndarray!")
+            if not 0 < arr.ndim <= 2:
+                raise ValueError(_WRONG_DIMENSIONS)
+            self = object.__new__(cls)
+            self._shape = arr.shape
+            self._ndim = arr.ndim
+            self._offset = 0
+            self._strides = arr.strides
+            self._base = None
+            self._data = array.array("B", arr.data.tobytes())
+            return self
+
+        if hasattr(obj, "__len__"):
+            shape = (len(obj),)
+            if shape[0] == 0:
+                raise ValueError(_BAD_AXIS_LENGTH.format(0))
+            if hasattr(obj[0], "__len__"):
+                shape = (len(obj), len(obj[0]))
+                if shape[1] == 0:
+                    raise ValueError(_BAD_AXIS_LENGTH.format(1))
+                if hasattr(obj[0][0], "__len__"):
+                    raise ValueError(_WRONG_DIMENSIONS)
+                self = object.__new__(cls)
+                self._shape = shape
+                self._ndim = len(shape)
+                self._offset = 0
+                self._strides = shape[1:] + (1,)
+                self._base = None
+                self._data = array.array("B")
+                for ln in obj:
+                    if not hasattr(ln, "__len__") or len(ln) != shape[1]:
+                        raise ValueError(_INHOMOGENEOUS_SEQ)
+                    for i in ln:
+                        if hasattr(i, "__len__"):
+                            raise ValueError(_INHOMOGENEOUS_SEQ)
+                        self._data.append(int(i))
+                return self
+
+            self = object.__new__(cls)
+            self._shape = (len(obj),)
+            self._ndim = 1
+            self._offset = 0
+            self._strides = (1,)
+            self._base = None
+            self._data = array.array("B")
+            for i in obj:
+                if hasattr(i, "__len__"):
+                    raise ValueError(_INHOMOGENEOUS_SEQ)
+                self._data.append(int(i))
+            return self
+
+    @classmethod
+    def zeros(cls, shape: tuple[int, int]) -> Board:
         if not 0 < len(shape) <= 2:
-            raise ValueError("shape must contain 1 or 2 items")
+            raise ValueError(_WRONG_DIMENSIONS)
+        for i, x in enumerate(shape):
+            if x < 0:
+                raise ValueError(_BAD_AXIS_LENGTH.format(i))
+        self = object.__new__(cls)
+        self._shape = shape
+        self._ndim = len(shape)
+        self._offset = 0
+        # incorrect for >=3d
+        self._strides = shape[1:] + (1,)
+        self._base = None
+        self._data = array.array("B", bytes(math.prod(shape)))
+        return self
 
-        if strides is not None and len(strides) != len(shape):
-            raise ValueError("amount of strides must match shape length")
-
-        if _base is None and len(shape) == 1:
-            warnings.warn(
-                "1-dimensional board was instanced directly",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-
+    @classmethod
+    def _view(
+        cls,
+        base: Board,
+        shape: tuple[int, ...],
+        offset: int,
+        strides: tuple[int, ...],
+    ) -> Board:
+        self = object.__new__(cls)
         self._shape = shape
         self._ndim = len(shape)
         self._offset = offset
-        if strides is None:
-            # incorrect for >=3d
-            self._strides = shape[1:] + (1,)
-        else:
-            self._strides = strides
-        self._base = _base
-        if _base is not None:
-            if _base._base is not None:
-                self._base = _base._base
-            self._data: array.array = _base._data
-        else:
-            self._data = array.array("B", bytes(math.prod(shape)))
-            self._base = None
+        self._strides = strides
+        self._base = base
+        if base._base is not None:
+            self._base = base._base
+        self._data = base._data
+        return self
 
-        # allows seamless integration with numpy
-        # https://numpy.org/doc/1.23/reference/arrays.interface.html#python-side
-        self.__array_interface__ = {
+    # allows seamless integration with numpy
+    # https://numpy.org/doc/1.23/reference/arrays.interface.html#python-side
+
+    @property
+    def __array_interface__(self):
+        return {
             "data": self._data,
             "offset": self._offset,
             "shape": self._shape,
@@ -131,8 +192,13 @@ class Board:
         return self.data.tobytes()
 
     def copy(self) -> Board:
-        new = Board(self._shape)
-        new._data[:] = self.data
+        new = object.__new__(Board)
+        new._shape = self._shape
+        new._ndim = self._ndim
+        new._offset = 0
+        new._strides = self._shape[1:] + (1,)
+        new._base = None
+        new._data = self.data
         return new
 
     def _normalize_index(
@@ -192,21 +258,21 @@ class Board:
             if self._ndim == 1:
                 return self._data[self._offset + key * self._strides[0]]
 
-            return Board(
+            return Board._view(
+                self,
                 (self._shape[1],),
                 self._offset + key * self._strides[0],
                 (self._strides[1],),
-                _base=self,
             )
 
         if isinstance(key, slice):
             start, stop, step = key.indices(self._shape[0])
 
-            return Board(
+            return Board._view(
+                self,
                 (max(math.ceil((stop - start) / step), 0), *self._shape[1:]),
                 self._offset + start * self._strides[0],
                 (self._strides[0] * step, *self._strides[1:]),
-                _base=self,
             )
 
         if isinstance(key, tuple):
@@ -220,7 +286,11 @@ class Board:
     ) -> None:
         key = self._normalize_index(key)
 
-        if isinstance(key, int):
+        if hasattr(key, "__index__"):
+            key = int(key)  # type: ignore[arg-type]
+            offset = self._offset + key * self._strides[0]
+            length = self._shape[1]
+            stride = self._strides[0]
             if hasattr(value, "__len__"):
                 if self._ndim == 1:
                     raise TypeError("can't assign sequence to element index")
@@ -228,11 +298,10 @@ class Board:
             else:
                 if not hasattr(value, "__index__"):
                     raise TypeError(_BAD_VALUE_TYPE)
-                offset = self._offset + key * self._strides[0]
                 if self._ndim == 1:
                     self._data[offset] = int(value)  # type: ignore[arg-type]
                 else:
-                    for i in range(offset, offset + self._shape[1], self._strides[1]):
+                    for i in range(offset, offset + length, stride):
                         self._data[i] = int(value)  # type: ignore[arg-type]
 
         elif isinstance(key, slice):
@@ -265,7 +334,7 @@ class Board:
             yield from self._data[start:stop:stride]
         else:
             for i in range(start, stop, stride):
-                yield Board((self._shape[1],), i, (self._strides[1],), _base=self)
+                yield Board._view(self, (self._shape[1],), i, (self._strides[1],))
 
     def __len__(self) -> int:
         return self._shape[0]
