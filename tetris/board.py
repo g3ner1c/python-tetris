@@ -94,6 +94,8 @@ class Board:
                 self._data.append(int(i))
             return self
 
+        raise TypeError(f"can't convert {obj} into {cls.__name__}")
+
     @classmethod
     def zeros(cls, shape: tuple[int, int]) -> Board:
         if not 0 < len(shape) <= 2:
