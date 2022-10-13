@@ -20,6 +20,24 @@ _BAD_AXIS_LENGTH = "board axis {} must have non-zero length"
 _INHOMOGENEOUS_SEQ = "the given sequence is not homogeneous. can't create board"
 
 
+def _broadcast(board: Any, shape: tuple[int, ...]) -> Board:
+    if not isinstance(board, Board):
+        board = Board(board)
+
+    if board._ndim > len(shape):
+        raise ValueError(_BAD_BROADCAST.format(board._shape, shape))
+
+    if board._ndim == len(shape):
+        if board._shape != shape:
+            raise ValueError(_BAD_BROADCAST.format(board._shape, shape))
+        return board.copy()
+
+    if board._shape[0] != shape[1]:
+        raise ValueError(_BAD_BROADCAST.format(board._shape, shape))
+
+    return Board([[*board.data]] * shape[0])
+
+
 class Board:
     """2-dimensional array object."""
 
@@ -265,6 +283,9 @@ class Board:
         if self._ndim == 1:
             yield (offset, offset + length, stride)
             return
+        if self._strides[1] * self._shape[1] == stride:
+            yield (offset, offset + length, self._strides[1])
+            return
         for i in range(offset, offset + length, stride):
             yield (i, i + self._strides[1] * self._shape[1], self._strides[1])
 
@@ -320,24 +341,34 @@ class Board:
         if hasattr(key, "__index__"):
             key = int(key)  # type: ignore[arg-type]
             offset = self._offset + key * self._strides[0]
-            length = self._shape[1]
-            stride = self._strides[0]
             if hasattr(value, "__len__"):
                 if self._ndim == 1:
                     raise TypeError("can't assign sequence to element index")
-                raise NotImplementedError  # TODO
+                length = self._shape[1]
+                stride = self._strides[1]
+                arr = _broadcast(value, (self._shape[1],))
+                self._data[offset:offset+length:stride] = arr.data
             else:
                 if not hasattr(value, "__index__"):
                     raise TypeError(_BAD_VALUE_TYPE)
                 if self._ndim == 1:
                     self._data[offset] = int(value)  # type: ignore[arg-type]
                 else:
+                    length = self._shape[1]
+                    stride = self._strides[1]
                     for i in range(offset, offset + length, stride):
                         self._data[i] = int(value)  # type: ignore[arg-type]
 
         elif isinstance(key, slice):
             if hasattr(value, "__len__"):
-                raise NotImplementedError  # TODO
+                arr = _broadcast(value, self[key]._shape)
+                if arr._base is not None:
+                    arr = arr.copy()  # FIXME: can this be done without copying?
+                x = 0
+                for start, stop, step in self._contiguous_blocks(key):
+                    length = len(self._data[start:stop:step])
+                    self._data[start:stop:step] = arr._data[x:x+length]
+                    x += length
             else:
                 if not hasattr(value, "__index__"):
                     raise TypeError(_BAD_VALUE_TYPE)
@@ -371,6 +402,7 @@ class Board:
         return self._shape[0]
 
     def __repr__(self) -> str:
+        max_i = max(MinoType)
         tiles = {
             MinoType.EMPTY: ".",
             MinoType.GHOST: "@",
@@ -386,6 +418,9 @@ class Board:
             for line in self:
                 text += "        "
                 for i in line:
+                    if i > max_i:
+                        text += "? "
+                        continue
                     text += tiles.get(i) or PieceType(i).name
                     text += " "
                 text += "\n"
