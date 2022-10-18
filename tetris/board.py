@@ -54,10 +54,10 @@ def _reshape(old_shape: tuple[int, ...], new_shape: tuple[int, ...]) -> tuple[in
         fixed_shape = list(new_shape)
         fixed_shape[unknown_dim] = 1
         new_axis = old_prod / math.prod(fixed_shape)
-        if new_axis < 1:
+        if new_axis % 1 != 0:
             raise ValueError(_BAD_RESHAPE.format(old_shape, new_shape))
-        fixed_shape[unknown_dim] = new_axis
-        return fixed_shape
+        fixed_shape[unknown_dim] = int(new_axis)
+        return tuple(fixed_shape)
 
     if math.prod(old_shape) != math.prod(new_shape):
         raise ValueError(_BAD_RESHAPE.format(old_shape, new_shape))
@@ -235,7 +235,7 @@ class Board:
         shape: tuple[int, ...],
         offset: int = 0,
         strides: Optional[tuple[int, ...]] = None,
-    ):
+    ) -> Board:
         """Create a new board using existing data.
 
         Parameters
@@ -459,7 +459,7 @@ class Board:
     ) -> None:
         key = self._normalize_index(key)
 
-        if hasattr(key, "__index__"):
+        if isinstance(key, int):
             offset = self._offset + key * self._strides[0]
             if hasattr(value, "__len__"):
                 if self._ndim == 1:
