@@ -1,7 +1,5 @@
 """2-dimensional array object implementation."""
 
-# TODO: a very nice long comment explaining how this magic works
-
 from __future__ import annotations
 
 import array
@@ -32,11 +30,13 @@ def _broadcast(board: Any, shape: tuple[int, ...]) -> Board:
     if board._ndim == len(shape):
         if board._shape != shape:
             raise ValueError(_BAD_BROADCAST.format(board._shape, shape))
+        # same shapes, no broadcasting
         return board.copy()
 
     if board._shape[0] != shape[1]:
         raise ValueError(_BAD_BROADCAST.format(board._shape, shape))
 
+    # repeat data across first axis: (y) -> (x, y)
     return Board([[*board.data]] * shape[0])
 
 
@@ -66,7 +66,48 @@ def _reshape(old_shape: tuple[int, ...], new_shape: tuple[int, ...]) -> tuple[in
 
 
 class Board:
-    """2-dimensional array object."""
+    """2-dimensional homogeneous array containing minos.
+
+    Parameters
+    ----------
+    obj : array-like object
+        A board, any (nested) sequence, or an object whose ``__array__`` method
+        returns a `np.ndarray`.
+    shape : tuple of ints, optional
+        If provided, the object will be reshaped into this. One of the axes can
+        be negative, in which it's value will be inferred from the remaining
+        axes. (e.g.: (-1, 8) for a sequence with 16 elements will use (2, 8))
+
+    Examples
+    --------
+    Creating a board:
+
+    >>> from tetris import Board
+    >>> Board([[0, 0, 0, 0], [0, 0, 0, 0]])
+    <Board [. . . .
+            . . . .]>
+    >>> Board.zeros((5, 4))
+    <Board [. . . .
+            . . . .
+            . . . .
+            . . . .
+            . . . .]
+    >>> Board.frombuffer(b"\0\0\3\4\3\0\0", (3,), offset=2)
+    <Board [L O L ])>
+
+    Indexing:
+
+    >>> b = Board([*range(8)] * 20, (16, 10))
+    >>> b[1]
+    <Board [J L O S T Z . I J L ])>
+    >>> b[::4]
+    <Board [. I J L O S T Z . I
+            . I J L O S T Z . I
+            . I J L O S T Z . I
+            . I J L O S T Z . I ])>
+    >>> b[1, 2]
+    4
+    """
 
     # https://github.com/python/mypy/issues/1021
     _shape: tuple[int, ...]
@@ -124,10 +165,12 @@ class Board:
             data = array.array("B")
 
             if hasattr(obj[0], "__len__"):
+                # nested sequence - 2d array
                 s_shape = (len(obj), len(obj[0]))
                 if s_shape[1] == 0:
                     raise ValueError(_BAD_AXIS_LENGTH.format(1))
                 if hasattr(obj[0][0], "__len__"):
+                    # double nested - 3d
                     raise ValueError(_WRONG_DIMENSIONS)
                 data = array.array("B")
                 for ln in obj:
@@ -326,6 +369,7 @@ class Board:
             return k
 
         if isinstance(key, slice):
+            # nothing to be done really
             return key
 
         if isinstance(key, tuple):
@@ -355,12 +399,15 @@ class Board:
         stride = self._strides[0] * step
         offset = self._offset + start * self._strides[0]
         length = stride * max(math.ceil((stop - start) / step), 0)
+        # only a single row
         if self._ndim == 1:
             yield (offset, offset + length, stride)
             return
+        # evenly spaced rows
         if self._strides[1] * self._shape[1] == stride:
             yield (offset, offset + length, self._strides[1])
             return
+        # worst case - all rows are incontiguous (e.g. when slicing as [::2])
         for i in range(offset, offset + length, stride):
             yield (i, i + self._strides[1] * self._shape[1], self._strides[1])
 
@@ -377,8 +424,6 @@ class Board:
         ...
 
     def __getitem__(self, key: Union[int, slice, tuple[int, int]]) -> Union[Board, int]:
-        # TODO: tuples with slices? might be unnecessary
-
         key = self._normalize_index(key)
 
         if isinstance(key, int):
