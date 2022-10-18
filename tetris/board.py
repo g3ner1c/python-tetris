@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import array
-import sys
 import math
+import sys
 from collections.abc import Iterable, Iterator
 from typing import Any, Optional, Union, overload
 
@@ -142,6 +142,7 @@ class Board:
 
         if hasattr(obj, "__array__") and "numpy" in sys.modules:
             import numpy as np
+
             arr = obj.__array__(np.int8)
             if isinstance(arr, np.ndarray):
                 if shape is not None:
