@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 import array
+import sys
 import math
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from typing import Any, Optional, Union, overload
 
 from tetris.types import MinoType, PieceType
@@ -18,6 +19,7 @@ _BAD_BROADCAST = "can't broadcast board from shape {} into {}"
 _WRONG_DIMENSIONS = "boards can only have 1 or 2 dimensions"
 _BAD_AXIS_LENGTH = "board axis {} must have non-zero length"
 _INHOMOGENEOUS_SEQ = "the given sequence is not homogeneous. can't create board"
+_BAD_RESHAPE = "can't reshape {} into {}"
 
 
 def _broadcast(board: Any, shape: tuple[int, ...]) -> Board:
@@ -36,6 +38,31 @@ def _broadcast(board: Any, shape: tuple[int, ...]) -> Board:
         raise ValueError(_BAD_BROADCAST.format(board._shape, shape))
 
     return Board([[*board.data]] * shape[0])
+
+
+def _reshape(old_shape: tuple[int, ...], new_shape: tuple[int, ...]) -> tuple[int, ...]:
+    old_prod = math.prod(old_shape)
+
+    unknown_dim = None
+    for i, j in enumerate(new_shape):
+        if j < 0:
+            if unknown_dim is not None:
+                raise ValueError("can't specify two uknown dimensions")
+            unknown_dim = i
+
+    if unknown_dim is not None:
+        fixed_shape = list(new_shape)
+        fixed_shape[unknown_dim] = 1
+        new_axis = old_prod / math.prod(fixed_shape)
+        if new_axis < 1:
+            raise ValueError(_BAD_RESHAPE.format(old_shape, new_shape))
+        fixed_shape[unknown_dim] = new_axis
+        return fixed_shape
+
+    if math.prod(old_shape) != math.prod(new_shape):
+        raise ValueError(_BAD_RESHAPE.format(old_shape, new_shape))
+
+    return new_shape
 
 
 class Board:
@@ -58,67 +85,77 @@ class Board:
         "_data",
     )
 
-    def __new__(cls, obj: Any, copy: bool = True) -> Board:
+    def __new__(cls, obj: Any, shape: Optional[tuple[int, ...]] = None) -> Board:
         """Create and return a new board object."""
+        if shape is not None and not 0 < len(shape) <= 2:
+            raise ValueError(_WRONG_DIMENSIONS)
+
         if isinstance(obj, Board):
-            if copy:
-                return obj.copy()
-            return obj[:]
+            b = obj.copy()
+            if shape is not None:
+                shape = _reshape(b._shape, shape)
+                b._shape = shape
+                b._ndim = len(shape)
+                b._strides = shape[1:] + (1,)
+            return b
 
-        if hasattr(obj, "__array__"):
+        if hasattr(obj, "__array__") and "numpy" in sys.modules:
             import numpy as np
-
             arr = obj.__array__(np.int8)
-            if not isinstance(arr, np.ndarray):
-                raise TypeError("obj.__array__ did not return ndarray!")
-            if not 0 < arr.ndim <= 2:
-                raise ValueError(_WRONG_DIMENSIONS)
-            self = object.__new__(cls)
-            self._shape = arr.shape
-            self._ndim = arr.ndim
-            self._offset = 0
-            self._strides = arr.strides
-            self._base = None
-            self._data = array.array("B", arr.data.tobytes())
-            return self
+            if isinstance(arr, np.ndarray):
+                if shape is not None:
+                    arr.shape = shape
+                if not 0 < arr.ndim <= 2:
+                    raise ValueError(_WRONG_DIMENSIONS)
+                self = object.__new__(cls)
+                self._shape = arr.shape
+                self._ndim = arr.ndim
+                self._offset = 0
+                self._strides = arr.strides
+                self._base = None
+                self._data = array.array("B", arr.data.tobytes())
+                return self
 
         if hasattr(obj, "__len__"):
-            shape: tuple[int, ...] = (len(obj),)
-            if shape[0] == 0:
+            s_shape: tuple[int, ...] = (len(obj),)
+            if s_shape[0] == 0:
                 raise ValueError(_BAD_AXIS_LENGTH.format(0))
+
+            data = array.array("B")
+
             if hasattr(obj[0], "__len__"):
-                shape = (len(obj), len(obj[0]))
-                if shape[1] == 0:
+                s_shape = (len(obj), len(obj[0]))
+                if s_shape[1] == 0:
                     raise ValueError(_BAD_AXIS_LENGTH.format(1))
                 if hasattr(obj[0][0], "__len__"):
                     raise ValueError(_WRONG_DIMENSIONS)
-                self = object.__new__(cls)
-                self._shape = shape
-                self._ndim = len(shape)
-                self._offset = 0
-                self._strides = shape[1:] + (1,)
-                self._base = None
-                self._data = array.array("B")
+                data = array.array("B")
                 for ln in obj:
-                    if not hasattr(ln, "__len__") or len(ln) != shape[1]:
+                    if not hasattr(ln, "__len__") or len(ln) != s_shape[1]:
                         raise ValueError(_INHOMOGENEOUS_SEQ)
                     for i in ln:
                         if hasattr(i, "__len__"):
                             raise ValueError(_INHOMOGENEOUS_SEQ)
-                        self._data.append(int(i))
-                return self
+                        data.append(int(i))
+            else:
+                # not nested - 1d
+                data = array.array("B")
+                for i in obj:
+                    if hasattr(i, "__len__"):
+                        raise ValueError(_INHOMOGENEOUS_SEQ)
+                    data.append(int(i))
 
             self = object.__new__(cls)
-            self._shape = (len(obj),)
-            self._ndim = 1
+            if shape is not None:
+                self._shape = _reshape(s_shape, shape)
+            else:
+                self._shape = s_shape
+
+            self._ndim = len(self._shape)
+            self._strides = self._shape[1:] + (1,)
             self._offset = 0
-            self._strides = (1,)
             self._base = None
-            self._data = array.array("B")
-            for i in obj:
-                if hasattr(i, "__len__"):
-                    raise ValueError(_INHOMOGENEOUS_SEQ)
-                self._data.append(int(i))
+            self._data = data
             return self
 
         raise TypeError(f"can't convert {obj} into {cls.__name__}")
@@ -145,6 +182,44 @@ class Board:
         self._strides = shape[1:] + (1,)
         self._base = None
         self._data = array.array("B", bytes(math.prod(shape)))
+        return self
+
+    @classmethod
+    def frombuffer(
+        cls,
+        buffer: Union[array.array, Iterable[int]],
+        shape: tuple[int, ...],
+        offset: int = 0,
+        strides: Optional[tuple[int, ...]] = None,
+    ):
+        """Create a new board using existing data.
+
+        Parameters
+        ----------
+        buffer : bytes-like object
+            Data to use. If already an `array.array`, no data is copied.
+        shape : tuple of ints
+        offset : int, optional
+        strides : tuple of ints, optional
+        """
+        if not isinstance(buffer, array.array):
+            buffer = array.array("B", buffer)
+        if not 0 < len(shape) <= 2:
+            raise ValueError(_WRONG_DIMENSIONS)
+        if offset < 0 or len(buffer) - offset < math.prod(shape):
+            raise ValueError("shape is out of bounds to buffer")
+        if strides is not None and len(strides) != len(shape):
+            raise ValueError("strides count must be same amount as dimensions")
+
+        self = object.__new__(cls)
+        self._shape = shape
+        self._ndim = len(shape)
+        self._offset = offset
+        if strides is None:
+            strides = shape[1:] + (1,)
+        self._strides = strides
+        self._base = None
+        self._data = buffer
         return self
 
     @classmethod
@@ -339,7 +414,6 @@ class Board:
         key = self._normalize_index(key)
 
         if hasattr(key, "__index__"):
-            key = int(key)  # type: ignore[arg-type]
             offset = self._offset + key * self._strides[0]
             if hasattr(value, "__len__"):
                 if self._ndim == 1:
