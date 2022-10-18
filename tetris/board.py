@@ -66,7 +66,7 @@ def _reshape(old_shape: tuple[int, ...], new_shape: tuple[int, ...]) -> tuple[in
 
 
 class Board:
-    """2-dimensional homogeneous array containing minos.
+    r"""2-dimensional homogeneous array containing minos.
 
     Parameters
     ----------
