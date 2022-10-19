@@ -144,8 +144,13 @@ class BaseGame:
             self.board = Board.zeros(
                 (self.rules.board_size[0] * 2, self.rules.board_size[1]),
             )
-        else:
+        elif isinstance(board, Board):
             self.board = board
+        else:
+            self.board = Board(board)
+
+        if self.board.ndim != 2:
+            raise ValueError("board must be 2-dimensional")
 
         for part in self.engine.parts():
             # Apply overrides from classvars instead of instance attributes, as

@@ -305,6 +305,14 @@ class Board:
         return self._shape
 
     @property
+    def ndim(self) -> int:
+        return self._ndim
+
+    @property
+    def strides(self) -> tuple[int, ...]:
+        return self._strides
+
+    @property
     def base(self) -> Optional[Board]:
         """The board storing the actual data, if it is not this one.
 
