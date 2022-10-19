@@ -5,12 +5,11 @@ import math
 from collections.abc import Iterable
 from typing import Any, Optional, Union
 
-import numpy as np
-
+from tetris.board import Board
 from tetris.engine import Engine, EngineFactory, Parts
 from tetris.impl.presets import Modern
 from tetris.types import (
-    Board,
+    BoardLike,
     MinoType,
     Move,
     MoveDelta,
@@ -39,9 +38,11 @@ class BaseGame:
         Mapping of rule names to overriden values.
 
         .. seealso:: `Ruleset`, `Rule`
-    board : tetris.types.Board, optional
-        A 2D `numpy.ndarray` with scalar `numpy.int8`, given as the
-        initial board data. Optional, defaults to making a new board.
+    board : board_like
+        A `tetris.Board` or any compatible type (like a nested sequence, or
+        an `object compatible with numpy`__)
+
+        __ https://numpy.org/doc/1.23/user/basics.interoperability.html
 
         .. hint::
             The *visible* board is half as short as the given (*internal*)
@@ -71,8 +72,8 @@ class BaseGame:
     ----------
     engine : tetris.Engine
         The `tetris.Engine` instance currently being used by this game.
-    board : numpy.ndarray
-        The `numpy.ndarray` storing the board state. All values correspond to
+    board : tetris.Board
+        The `tetris.Board` storing the board state. All values correspond to
         `tetris.MinoType`. This board is twice as tall as the visible board.
         (see `height` and `width` for the proper board shape)
 
@@ -116,7 +117,7 @@ class BaseGame:
         factory: Union[EngineFactory, Parts] = Modern,
         rule_overrides: dict[str, Any] = {},
         /,
-        board: Optional[Board] = None,
+        board: Optional[BoardLike] = None,
         queue: Optional[Iterable[int]] = None,
         level: Optional[int] = None,
         score: int = 0,
@@ -143,12 +144,16 @@ class BaseGame:
         if board is None:
             # Internally, we use 2x the height to "buffer" the board being
             # pushed above the view (e.g.: with garbage)
-            self.board = np.zeros(
+            self.board = Board.zeros(
                 (self.rules.board_size[0] * 2, self.rules.board_size[1]),
-                np.int8,
             )
-        else:
+        elif isinstance(board, Board):
             self.board = board
+        else:
+            self.board = Board(board)
+
+        if self.board.ndim != 2:
+            raise ValueError("board must be 2-dimensional")
 
         for part in self.engine.parts():
             # Apply overrides from classvars instead of instance attributes, as
@@ -268,7 +273,6 @@ class BaseGame:
             board[x + ghost_x, y + piece.y] = 8
             board[x + piece.x, y + piece.y] = piece.type
 
-        board.flags.writeable = False
         return board[-self.height - buffer_lines :]
 
     def reset(self) -> None:

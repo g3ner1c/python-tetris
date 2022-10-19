@@ -6,25 +6,49 @@ import dataclasses
 import enum
 import keyword
 import sys
-from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Optional, Union, final
-
-import numpy as np
-from numpy.typing import NDArray
+from collections.abc import Iterable, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Optional,
+    Protocol,
+    SupportsIndex,
+    Union,
+    final,
+    runtime_checkable,
+)
 
 if TYPE_CHECKING:
     from tetris import BaseGame
+    from tetris.board import Board
+
+    try:
+        import numpy as np
+    except ImportError:
+        pass
 
 if sys.version_info > (3, 10):
     from typing import TypeAlias
 
-    Board: TypeAlias
     Minos: TypeAlias
     Seed: TypeAlias
+    BoardLike: TypeAlias
 
-Board = NDArray[np.int8]
+
+@runtime_checkable
+class _SupportsArray(Protocol):
+    def __array__(self, dtype: type[np.generic]) -> np.ndarray[Any, np.dtype[np.int8]]:
+        ...
+
+
 Minos = Iterable[tuple[int, int]]
 Seed = Union[str, bytes, int]
+BoardLike = Union[
+    "Board",
+    _SupportsArray,
+    Sequence[SupportsIndex],
+    Sequence[Sequence[SupportsIndex]],
+]
 
 
 @final

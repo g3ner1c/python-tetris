@@ -24,7 +24,6 @@ tetris = "tetris.__main__:main"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-numpy = "^1.21.4"
 Sphinx = { version = ">=4.4,<6.0", optional = true }
 furo = { version = "^2022.3.4", optional = true }
 numpydoc = { version = "^1.2", optional = true }
@@ -55,6 +54,10 @@ no_implicit_optional = true
 warn_unreachable = true
 warn_redundant_casts = true
 warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = "numpy"
+ignore_missing_imports = true
 
 [tool.isort]
 profile = "black"

@@ -29,14 +29,13 @@ html_static_path = ["_static"]
 
 autodoc_member_order = "bysource"
 autodoc_type_aliases = {
-    "Board": "tetris.types.Board",
     "Minos": "tetris.types.Minos",
     "Seed": "tetris.types.Seed",
+    "board_like": "tetris.types.BoardLike",
 }
 
 intersphinx_mapping = {
     "py": ("https://docs.python.org/3", None),
-    "np": ("https://numpy.org/doc/stable", None),
 }
 
 python_use_unqualified_type_names = True

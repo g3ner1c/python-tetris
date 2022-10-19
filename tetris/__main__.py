@@ -19,8 +19,6 @@ import tracemalloc
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
-import numpy as np
-
 import tetris
 
 # NOTE: `tracemalloc` may be enabled at runtime, but will not track memory that
@@ -41,7 +39,7 @@ if flag_names:
     FLAGS = sys.abiflags + " [" + "+".join(flag_names) + "]"
 else:
     FLAGS = sys.abiflags
-VERSION = f"python-tetris {tetris.__version__} (numpy {np.__version__})"
+VERSION = f"python-tetris {tetris.__version__}"
 # e.g. `CPython 3.10.0d [debug] on Linux`
 ENVIRONMENT = "%s %s%s on %s" % (
     platform.python_implementation(),
@@ -483,7 +481,7 @@ class GameScene(Scene):
         self.previews = {}
         for piece in tetris.PieceType:
             minos = self.game.rs.spawn(piece).minos
-            shape = np.zeros((4, 4), bool)
+            shape = tetris.board.Board.zeros((4, 4))
             for x, y in minos:
                 shape[x, y] = True
 

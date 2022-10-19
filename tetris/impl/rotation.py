@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import ClassVar, Optional
 
+from tetris.board import Board
 from tetris.engine import RotationSystem
-from tetris.types import Board, Minos, Piece, PieceType, Rule, Ruleset
+from tetris.types import Minos, Piece, PieceType, Rule, Ruleset
 
 KickTable = dict[tuple[int, int], tuple[tuple[int, int], ...]]  # pardon
 

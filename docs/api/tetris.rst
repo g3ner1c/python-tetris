@@ -15,6 +15,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   tetris.board
    tetris.engine
    tetris.game
    tetris.types

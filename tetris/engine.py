@@ -9,7 +9,8 @@ import secrets
 from collections.abc import Iterable, Iterator, Sequence
 from typing import TYPE_CHECKING, Any, Optional, final, overload
 
-from tetris.types import Board, Minos, MoveDelta, Piece, PieceType, Ruleset, Seed
+from tetris.board import Board
+from tetris.types import Minos, MoveDelta, Piece, PieceType, Ruleset, Seed
 
 if TYPE_CHECKING:
     from tetris import BaseGame
@@ -263,7 +264,7 @@ class RotationSystem(EnginePart):
 
     Parameters
     ----------
-    board : tetris.types.Board
+    board : tetris.board.Board
         The board this should operate on.
     """
 
