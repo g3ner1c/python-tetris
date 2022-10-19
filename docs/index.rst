@@ -19,10 +19,8 @@ python-tetris: a simple and modular tetris library
    License <license>
 
 python-tetris is a tetris library for Python, it provides you a clean API to
-implement variants of games and to analyse them.
-
-This library only requires `numpy <https://numpy.org>`_ (>= 1.21) and python
-itself (>= 3.9).
+implement variants of games and to analyse them. It does not require anything
+more than python itself.
 
 A quick glance
 --------------

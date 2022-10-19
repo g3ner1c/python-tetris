@@ -37,9 +37,11 @@ class BaseGame:
         Mapping of rule names to overriden values.
 
         .. seealso:: `Ruleset`, `Rule`
-    board : tetris.board.Board, optional
-        A 2D `numpy.ndarray` with scalar `numpy.int8`, given as the
-        initial board data. Optional, defaults to making a new board.
+    board : array-like
+        A `tetris.Board` or any compatible type (like a nested sequence, or
+        an `object compatible with numpy`__)
+
+        __ https://numpy.org/doc/1.23/user/basics.interoperability.html
 
         .. hint::
             The *visible* board is half as short as the given (*internal*)
@@ -69,8 +71,8 @@ class BaseGame:
     ----------
     engine : tetris.Engine
         The `tetris.Engine` instance currently being used by this game.
-    board : numpy.ndarray
-        The `numpy.ndarray` storing the board state. All values correspond to
+    board : tetris.Board
+        The `tetris.Board` storing the board state. All values correspond to
         `tetris.MinoType`. This board is twice as tall as the visible board.
         (see `height` and `width` for the proper board shape)
 
