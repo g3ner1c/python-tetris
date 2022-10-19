@@ -55,7 +55,8 @@ warn_unreachable = true
 warn_redundant_casts = true
 warn_unused_configs = true
 
-[tool.mypy-numpy]
+[[tool.mypy.overrides]]
+module = "numpy"
 ignore_missing_imports = true
 
 [tool.isort]
