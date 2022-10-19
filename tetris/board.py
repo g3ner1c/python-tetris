@@ -78,6 +78,19 @@ class Board:
         be negative, in which it's value will be inferred from the remaining
         axes. (e.g.: (-1, 8) for a sequence with 16 elements will use (2, 8))
 
+    Attributes
+    ----------
+    shape : tuple of ints
+        The board's shape.
+    ndim : int
+        The board's number of dimensions.
+    strides : tuple of ints
+        The board's strides for each axis.
+    base : Board
+        If the board is a view, this is the board containing the actual data.
+    data : array.array
+        The board's raw data in memory.
+
     Examples
     --------
     Creating a board:
@@ -306,10 +319,12 @@ class Board:
 
     @property
     def ndim(self) -> int:
+        """The board's number of dimensions."""
         return self._ndim
 
     @property
     def strides(self) -> tuple[int, ...]:
+        """The spacing between successive elements in memory for each axis."""
         return self._strides
 
     @property
