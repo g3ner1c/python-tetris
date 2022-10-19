@@ -31,6 +31,7 @@ autodoc_member_order = "bysource"
 autodoc_type_aliases = {
     "Minos": "tetris.types.Minos",
     "Seed": "tetris.types.Seed",
+    "board_like": "tetris.types.BoardLike",
 }
 
 intersphinx_mapping = {

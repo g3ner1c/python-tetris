@@ -5,10 +5,10 @@ from __future__ import annotations
 import array
 import math
 import sys
-from collections.abc import Iterable, Iterator
-from typing import Any, Optional, Union, overload
+from collections.abc import Iterable, Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Optional, SupportsIndex, Union, cast, overload
 
-from tetris.types import MinoType, PieceType
+from tetris.types import BoardLike, MinoType, PieceType, _SupportsArray
 
 _BAD_INDEX_TYPE = "board indices must be integers, slices or tuples of integers, not {}"
 _OUT_OF_BOUNDS = "board index {} out of bounds for axis {}"
@@ -65,12 +65,17 @@ def _reshape(old_shape: tuple[int, ...], new_shape: tuple[int, ...]) -> tuple[in
     return new_shape
 
 
+# XXX: `typing.Protocol` instance checks are considerably slower than just
+#      checking the required method, so some unusual assertions are made as
+#      mypy does not recognise that
+
+
 class Board:
     r"""2-dimensional homogeneous array containing minos.
 
     Parameters
     ----------
-    obj : array-like object
+    obj : board_like
         A board, any (nested) sequence, or an object whose ``__array__`` method
         returns a `np.ndarray`.
     shape : tuple of ints, optional
@@ -139,7 +144,7 @@ class Board:
         "_data",
     )
 
-    def __new__(cls, obj: Any, shape: Optional[tuple[int, ...]] = None) -> Board:
+    def __new__(cls, obj: BoardLike, shape: Optional[tuple[int, ...]] = None) -> Board:
         """Create and return a new board object."""
         if shape is not None and not 0 < len(shape) <= 2:
             raise ValueError(_WRONG_DIMENSIONS)
@@ -154,6 +159,8 @@ class Board:
             return b
 
         if hasattr(obj, "__array__") and "numpy" in sys.modules:
+            if TYPE_CHECKING:
+                assert isinstance(obj, _SupportsArray)
             import numpy as np
 
             arr = obj.__array__(np.int8)
@@ -172,6 +179,8 @@ class Board:
                 return self
 
         if hasattr(obj, "__len__"):
+            if TYPE_CHECKING:
+                assert not isinstance(obj, _SupportsArray)
             s_shape: tuple[int, ...] = (len(obj),)
             if s_shape[0] == 0:
                 raise ValueError(_BAD_AXIS_LENGTH.format(0))
@@ -179,6 +188,8 @@ class Board:
             data = array.array("B")
 
             if hasattr(obj[0], "__len__"):
+                if TYPE_CHECKING:
+                    obj = cast(Sequence[Sequence[SupportsIndex]], obj)
                 # nested sequence - 2d array
                 s_shape = (len(obj), len(obj[0]))
                 if s_shape[1] == 0:
@@ -195,6 +206,8 @@ class Board:
                             raise ValueError(_INHOMOGENEOUS_SEQ)
                         data.append(int(i))
             else:
+                if TYPE_CHECKING:
+                    obj = cast(Sequence[SupportsIndex], obj)
                 # not nested - 1d
                 data = array.array("B")
                 for i in obj:

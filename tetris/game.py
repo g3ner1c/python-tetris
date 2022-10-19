@@ -9,6 +9,7 @@ from tetris.board import Board
 from tetris.engine import Engine, EngineFactory, Parts
 from tetris.impl.presets import Modern
 from tetris.types import (
+    BoardLike,
     MinoType,
     Move,
     MoveDelta,
@@ -37,7 +38,7 @@ class BaseGame:
         Mapping of rule names to overriden values.
 
         .. seealso:: `Ruleset`, `Rule`
-    board : array-like
+    board : board_like
         A `tetris.Board` or any compatible type (like a nested sequence, or
         an `object compatible with numpy`__)
 
@@ -116,7 +117,7 @@ class BaseGame:
         factory: Union[EngineFactory, Parts] = Modern,
         rule_overrides: dict[str, Any] = {},
         /,
-        board: Optional[Board] = None,
+        board: Optional[BoardLike] = None,
         queue: Optional[Iterable[int]] = None,
         level: Optional[int] = None,
         score: int = 0,
