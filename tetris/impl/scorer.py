@@ -30,8 +30,13 @@ class GuidelineScorer(Scorer):
         self.goal = self.level * 10
         self.combo = 0
         self.back_to_back = 0
+        self.tspin = False
+        self.tspin_mini = False
 
     def judge(self, delta: MoveDelta) -> None:  # noqa: D102
+        piece = delta.game.piece
+        board = delta.game.board
+
         if delta.kind == MoveKind.soft_drop:  # soft drop
             if not delta.auto:
                 self.score += delta.x
@@ -43,42 +48,10 @@ class GuidelineScorer(Scorer):
                 self.score += delta.x * 2
                 # self.score instead because hard drop isn't affected by level
 
-            piece = delta.game.piece
-            board = delta.game.board
-
             line_clears = len(delta.clears)  # how many lines cleared
-            tspin = False
-            tspin_mini = False
-            if piece.type == PieceType.T and delta.r:  # t-spin case
-                x = piece.x
-                y = piece.y
-                mx, my = board.shape
-
-                # fmt: off
-                if x + 2 < mx and y + 2 < my:
-                    corners = sum(board[(x + 0, x + 2, x + 0, x + 2),
-                                        (y + 0, y + 0, y + 2, y + 2)] != 0)
-                elif x + 2 > mx and y + 2 < my:
-                    corners = sum(board[(x + 0, x + 0),
-                                        (y + 0, y + 2)] != 0) + 2
-                elif x + 2 < mx and y + 2 > my:
-                    corners = sum(board[(x + 0, x + 2),
-                                        (y + 0, y + 0)] != 0) + 2
-
-                if corners >= 3:
-                    tspin_mini = not (
-                        board[[((x + 0, x + 0), (y + 0, y + 2)),
-                               ((x + 0, x + 2), (y + 2, y + 2)),
-                               ((x + 2, x + 2), (y + 0, y + 2)),
-                               ((x + 0, x + 2), (y + 0, y + 0))][piece.r]] != 0
-                    ).all() and delta.x < 2
-
-                    tspin = not tspin_mini
-
-                # fmt: on
 
             if line_clears:  # B2B and combo
-                if tspin or tspin_mini or line_clears >= 4:
+                if self.tspin or self.tspin_mini or line_clears >= 4:
                     self.back_to_back += 1
                 else:
                     self.back_to_back = 0
@@ -91,10 +64,10 @@ class GuidelineScorer(Scorer):
             if perfect_clear:
                 score += [0, 800, 1200, 1800, 2000][line_clears]
 
-            elif tspin:
+            elif self.tspin:
                 score += [400, 800, 1200, 1600, 0][line_clears]
 
-            elif tspin_mini:
+            elif self.tspin_mini:
                 score += [100, 200, 400, 0, 0][line_clears]
 
             else:
@@ -116,6 +89,61 @@ class GuidelineScorer(Scorer):
             if self.line_clears >= self.goal:
                 self.goal += 10
                 self.level += 1
+
+        self.tspin = False
+        self.tspin_mini = False
+
+        # useful: https://tetris.wiki/T-Spin#Current_rules
+        if delta.kind == MoveKind.rotate and piece.type == PieceType.T and delta.r != 0:
+            px = piece.x
+            py = piece.y
+            corners = []
+            # check corners clockwise from top-left
+            for x, y in [(0, 0), (0, 2), (2, 2), (2, 0)]:
+                corners.append(
+                    x + px not in range(board.shape[0])
+                    or y + py not in range(board.shape[1])
+                    or board[x + px, y + py] != 0
+                )
+
+            back = None
+            # find the back of the piece clockwise from top. note how this
+            # is checked in the same order as the corners: corners[back] will
+            # be the corner before the back edge (behind counter-clockwise)
+            for i, pos in enumerate([(0, 1), (1, 2), (2, 1), (1, 0)]):
+                if pos not in piece.minos:
+                    back = i
+                    break
+
+            # ideally, an edge is always found. unless:
+            #  - the piece's center is not 1,1 (should this be checked?)
+            #  - its not T-shaped
+            if back is not None:
+                if (
+                    # if there are two corners in front edge...
+                    corners[(back + 2) % 4]
+                    and corners[(back + 3) % 4]
+                ) and (
+                    # ...and at least one corner in back edge
+                    corners[back]
+                    or corners[(back + 1) % 4]
+                ):
+                    # it's a proper t-spin!
+                    self.tspin = True
+                elif (
+                    # but, if there is one corner in front edge...
+                    corners[(back + 2) % 4] or corners[(back + 3) % 4]
+                ) and (
+                    # and two in back edge...
+                    corners[back] and corners[(back + 1) % 4]
+                ):
+                    # this is still a tspin!
+                    if abs(delta.x) == 2 and abs(delta.y) == 1:
+                        # the piece was kicked far, still proper t-spin!
+                        self.tspin = True
+                    else:
+                        # otherwise.. mini-tspin
+                        self.tspin_mini = True
 
 
 class NESScorer(Scorer):
