@@ -206,8 +206,7 @@ class TetrisTUI:
 
     async def main(self):
         """Application loop."""
-        output = io.StringIO()
-        sys.stdout = sys.stderr = output
+        sys.stdout = sys.stderr = self.output
         self.screen = curses.initscr()
         curses.savetty()
         try:
@@ -231,7 +230,7 @@ class TetrisTUI:
 
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
-            print(output.getvalue(), end="")
+            print(self.output.getvalue(), end="")
 
     async def setup(self):
         """Prepare the TUI for the main loop."""
@@ -258,6 +257,7 @@ class TetrisTUI:
     async def on_resize(self):
         """Update UI dependant on terminal size."""
         self.my, self.mx = self.screen.getmaxyx()
+        self.screen.clear()
         await self.scene.on_resize()
 
     async def render(self):
@@ -271,6 +271,9 @@ class TetrisTUI:
                 raise self.debug_renderer.exception()
             for i, ln in enumerate(self.debug_lines):
                 self.screen.addstr(i, 0, ln, curses.A_REVERSE)
+
+            for i, ln in enumerate(self.output.getvalue().splitlines()[:-16:-1]):
+                self.screen.addstr(self.my - i - 1, 0, ln, curses.A_REVERSE)
 
         # Recalculate average every 1 second
         if len(self.frames) >= self.hz:
