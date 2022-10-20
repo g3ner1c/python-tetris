@@ -15,7 +15,6 @@ import shutil
 import statistics
 import sys
 import time
-import tracemalloc
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
@@ -26,7 +25,13 @@ import tetris
 # `PYTHONTRACEMALLOC` to 1 or higher, or providing `-Xtracemalloc`::
 #    $ PYTHONTRACEMALLOC=1 tetris
 #    $ python -Xtracemalloc tetris
-USE_TRACEMALLOC = tracemalloc.is_tracing()
+try:
+    import tracemalloc
+except ImportError:
+    USE_TRACEMALLOC = False
+else:
+    USE_TRACEMALLOC = tracemalloc.is_tracing()
+
 flag_names = []
 for flag in sys.abiflags:
     if flag == "d":
