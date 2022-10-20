@@ -32,6 +32,9 @@ except ImportError:
 else:
     USE_TRACEMALLOC = tracemalloc.is_tracing()
 
+PYPY = sys.implementation.name == "pypy"
+CPYTHON = sys.implementation.name == "cpython"
+
 flag_names = []
 for flag in sys.abiflags:
     if flag == "d":
@@ -132,6 +135,27 @@ def guess_data_path() -> Optional[Path]:
     return None
 
 
+def get_memory_info() -> list[str]:
+    """Return memory info according to the interpreter, if possible."""
+    if PYPY:
+        stats = gc.get_stats()
+        return [
+            f"Mem: {stats.memory_used_sum} (↑{stats.peak_memory})",
+            f"Allocated: {stats.memory_allocated_sum}",
+        ]
+    if CPYTHON:
+        if USE_TRACEMALLOC:
+            mem, peak = tracemalloc.get_traced_memory()
+            return [
+                f"Mem: {mem // 1000}kB (↑{peak // 1000}kB)",
+                f"Allocated: {sys.getallocatedblocks()}",
+                "GC: %i %i %i" % gc.get_count(),
+            ]
+        return ["Mem: [tracemalloc disabled]"]
+    # XXX: psutil fallback maybe?
+    return []
+
+
 class TetrisTUI:
     """TUI Tetris game."""
 
@@ -213,7 +237,10 @@ class TetrisTUI:
         """Prepare the TUI for the main loop."""
         curses.noecho()
         curses.raw(True)
-        curses.set_escdelay(4)
+        try:
+            curses.set_escdelay(4)
+        except AttributeError:
+            pass
         self.screen.keypad(True)
         try:
             curses.start_color()
@@ -240,6 +267,8 @@ class TetrisTUI:
         await self.scene.render()
 
         if self.debug:
+            if self.debug_renderer.done():
+                raise self.debug_renderer.exception()
             for i, ln in enumerate(self.debug_lines):
                 self.screen.addstr(i, 0, ln, curses.A_REVERSE)
 
@@ -255,7 +284,7 @@ class TetrisTUI:
 
     async def render_debug(self) -> None:
         """Render the debug menu, if active."""
-        termname = curses.termname().decode()
+        termname = os.getenv("TERM")
         while True:
             if self.debug:
                 lines = []
@@ -263,13 +292,7 @@ class TetrisTUI:
                 lines.append(ENVIRONMENT)
                 lines.append("%i fps" % self.fps)
                 lines.append("@ %ius ticks" % (self.tick * 1e6))
-                if USE_TRACEMALLOC:
-                    mem, peak = tracemalloc.get_traced_memory()
-                    lines.append(f"Mem: {mem // 1000}kB (↑{peak // 1000}kB)")
-                else:
-                    lines.append("Mem: [unknown]")
-                # lines.append(f"Allocated: {sys.getallocatedblocks()} blocks")
-                lines.append("GC: %i %i %i" % gc.get_count())
+                lines.extend(get_memory_info())
                 lines.append(
                     f"Display: {self.my}x{self.mx}, "
                     f"{curses.COLORS} colors ({termname})"
