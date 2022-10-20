@@ -132,10 +132,12 @@ class GuidelineScorer(Scorer):
                     self.tspin = True
                 elif (
                     # but, if there is one corner in front edge...
-                    corners[(back + 2) % 4] or corners[(back + 3) % 4]
+                    corners[(back + 2) % 4]
+                    or corners[(back + 3) % 4]
                 ) and (
                     # and two in back edge...
-                    corners[back] and corners[(back + 1) % 4]
+                    corners[back]
+                    and corners[(back + 1) % 4]
                 ):
                     # this is still a tspin!
                     if abs(delta.x) == 2 and abs(delta.y) == 1:
