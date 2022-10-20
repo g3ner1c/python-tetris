@@ -319,6 +319,8 @@ class TetrioSRS(SRS):
     kicks = SRS.kicks | tetrio_180_kicks
     i_kicks = SRS.i_kicks | tetrio_180_kicks
 
+    rules: Ruleset
+
     def __init__(self, board: Board):
         super().__init__(board)
 
@@ -463,7 +465,7 @@ class NRS(RotationSystem):
         ],
     }
 
-    gb_shapes = shapes | {
+    gb_shapes: dict[PieceType, list[Minos]] = shapes | {
         PieceType.I: [
             ((2, 0), (2, 1), (2, 2), (2, 3)),
             #    . . . .
@@ -506,6 +508,8 @@ class NRS(RotationSystem):
             ((0, 1), (1, 0), (1, 1), (2, 0)),
         ],
     }
+
+    rules: Ruleset
 
     def __init__(self, board: Board):
         super().__init__(board)
