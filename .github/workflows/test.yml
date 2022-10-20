@@ -38,7 +38,7 @@ jobs:
                   python-version: "3.10"
 
             - name: Install tox
-              run: pipx --python python3.10 install tox
+              run: pipx install --python python3.10 tox
 
             - name: Generate apidoc
               run: tox -e apidocs
