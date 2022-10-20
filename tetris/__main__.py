@@ -138,7 +138,7 @@ def guess_data_path() -> Optional[Path]:
 def get_memory_info() -> list[str]:
     """Return memory info according to the interpreter, if possible."""
     if PYPY:
-        stats = gc.get_stats()
+        stats: Any = gc.get_stats()  # type: ignore
         return [
             f"Mem: {stats.memory_used_sum} (↑{stats.peak_memory})",
             f"Allocated: {stats.memory_allocated_sum}",
@@ -268,7 +268,10 @@ class TetrisTUI:
 
         if self.debug:
             if self.debug_renderer.done():
-                raise self.debug_renderer.exception()
+                exc = self.debug_renderer.exception()
+                if exc is None:
+                    raise RuntimeError("debug_renderer task died!")
+                raise exc
             for i, ln in enumerate(self.debug_lines):
                 self.screen.addstr(i, 0, ln, curses.A_REVERSE)
 
