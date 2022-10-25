@@ -324,7 +324,7 @@ class TetrisTUI:
     ) -> curses.window:
         """Return a subwindow centered relative to the screen."""
         return self.screen.subwin(
-            sy, sx, (self.my - sy) // 2 + dy, (self.mx - sx) // 2 + dx
+            sy, sx, (self.my - sy + dy) // 2, (self.mx - sx + dx) // 2
         )
 
 
@@ -534,10 +534,10 @@ class GameScene(Scene):
             ]
 
     async def on_resize(self):  # noqa: D102
-        self.view = self.tui.centeredsubwin(25, 22, dy=-2)
-        self.hold = self.tui.centeredsubwin(4, 10, dy=-9, dx=-15)
-        self.queue = self.tui.centeredsubwin(13, 10, dy=-4, dx=15)
-        self.stats = self.tui.centeredsubwin(2, 22, dy=11)
+        self.view = self.tui.centeredsubwin(25, 22, dy=-4)
+        self.hold = self.tui.centeredsubwin(4, 10, dy=-18, dx=-30)
+        self.queue = self.tui.centeredsubwin(13, 10, dy=-8, dx=30)
+        self.stats = self.tui.centeredsubwin(2, 22, dy=23)
 
     async def render(self):  # noqa: D102
         t = time.perf_counter()
