@@ -79,7 +79,13 @@ class InfinityGravity(Gravity):
         now = time.monotonic_ns()
 
         if delta is not None:
-            if delta.kind == MoveKind.hard_drop:
+            if (
+                delta.kind == MoveKind.hard_drop
+                or delta.kind == MoveKind.swap
+                or not self.game.rs.overlaps(
+                    minos=piece.minos, px=piece.x + 1, py=piece.y
+                )
+            ):
                 self.idle_lock.stop()
                 self.lock_resets = 0
 
