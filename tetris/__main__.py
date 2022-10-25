@@ -238,7 +238,7 @@ class TetrisTUI:
         curses.raw(True)
         try:
             curses.set_escdelay(4)
-        except AttributeError:
+        except (AttributeError, curses.error):
             pass
         self.screen.keypad(True)
         try:
@@ -246,7 +246,10 @@ class TetrisTUI:
         except curses.error:
             pass
 
-        curses.curs_set(0)
+        try:
+            curses.curs_set(0)
+        except curses.error:
+            pass
         self.screen.nodelay(True)
 
         await self.on_resize()
