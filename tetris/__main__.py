@@ -103,6 +103,7 @@ PRESETS = {
     "modern": tetris.impl.presets.Modern,
     "nestris": tetris.impl.presets.NES,
 }
+# foregound and background colors, 4-bit and 8-bit versions
 COLORS = {
     "default": ((255, 15), (233, 0)),
     "reverse": ((232, 0), (255, 15)),
@@ -119,6 +120,7 @@ COLORS = {
     MinoType.O.value: ((220, 11), None),
 }
 PALETTE = {
+    # basic 4-bit colors
     0: 0x151515,
     9: 0xEB4763,
     10: 0x2EDC76,
@@ -127,7 +129,7 @@ PALETTE = {
     13: 0xA873E8,
     14: 0x13C5F6,
     15: 0xF0F0F0,
-
+    # 8-bit colors
     87: 0x13C5F6,
     214: 0xF18F01,
     81: 0x00B8F5,
@@ -303,6 +305,7 @@ class TetrisTUI:
         for i, (name, colors) in enumerate(COLORS.items()):
             fg = colors[0] or COLORS["default"][0]
             bg = colors[1] or COLORS["default"][1]
+            assert fg and bg
             if curses.COLORS >= 256:
                 curses.init_pair(i + 1, fg[0], bg[0])
                 self.colors[name] = curses.color_pair(i + 1)
@@ -411,8 +414,8 @@ class Scene:
         return self.tui.screen
 
     @property
-    def colors(self) -> dict[Any, tuple[tuple[int, int], ...]]:
-        """Shorthand for `tui.colors`"""
+    def colors(self) -> dict[Any, int]:
+        """Shorthand for `tui.colors`."""
         return self.tui.colors
 
     async def on_resize(self) -> None:

@@ -6,8 +6,8 @@ import tetris
 sys.path.insert(0, path.abspath("../tetris"))
 
 project = "python-tetris"
-author = 'Sofia N. Lima'
-copyright = '2021-2022, Sofia N. Lima'
+author = "Sofia N. Lima"
+copyright = "2021-2022, Sofia N. Lima"
 release = tetris.__version__
 
 extensions = [
