@@ -58,7 +58,7 @@ ENVIRONMENT = "%s %s%s on %s" % (
 FQDN = "xyz.dzshn.tetris"
 USAGE = f"""\
 tetris {tetris.__version__}
-Anya <me@dzshn.xyz>
+Sofia <me@dzshn.xyz>
 
 Usage:
     tetris [flags]
