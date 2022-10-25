@@ -9,6 +9,7 @@ import curses.ascii
 import gc
 import getopt
 import io
+import math
 import os
 import platform
 import shutil
@@ -19,6 +20,7 @@ from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
 import tetris
+from tetris import MinoType
 
 # NOTE: `tracemalloc` may be enabled at runtime, but will not track memory that
 # is already allocated. it should be enabled as early as possible by setting
@@ -101,9 +103,43 @@ PRESETS = {
     "modern": tetris.impl.presets.Modern,
     "nestris": tetris.impl.presets.NES,
 }
-# enums are too slow ;)
-EMPTY = tetris.MinoType.EMPTY
-GHOST = tetris.MinoType.GHOST
+COLORS = {
+    "default": ((255, 15), (233, 0)),
+    "reverse": ((232, 0), (255, 15)),
+    "selection": ((255, 0), (235, 15)),
+    MinoType.EMPTY.value: (None, None),
+    MinoType.GARBAGE.value: (None, None),
+    MinoType.GHOST.value: (None, None),
+    MinoType.I.value: ((87, 14), None),
+    MinoType.L.value: ((214, 11), None),
+    MinoType.J.value: ((81, 12), None),
+    MinoType.S.value: ((77, 10), None),
+    MinoType.Z.value: ((196, 9), None),
+    MinoType.T.value: ((92, 13), None),
+    MinoType.O.value: ((220, 11), None),
+}
+PALETTE = {
+    0: 0x151515,
+    9: 0xEB4763,
+    10: 0x2EDC76,
+    11: 0xFDC835,
+    12: 0x00B8F5,
+    13: 0xA873E8,
+    14: 0x13C5F6,
+    15: 0xF0F0F0,
+
+    87: 0x13C5F6,
+    214: 0xF18F01,
+    81: 0x00B8F5,
+    77: 0x2EDC76,
+    196: 0xEB4763,
+    92: 0xA873E8,
+    220: 0xFDC835,
+    233: 0x151515,
+    255: 0xF0F0F0,
+}
+EMPTY = MinoType.EMPTY.value
+GHOST = MinoType.GHOST.value
 
 
 def guess_data_path() -> Optional[Path]:
@@ -236,21 +272,51 @@ class TetrisTUI:
         """Prepare the TUI for the main loop."""
         curses.noecho()
         curses.raw(True)
+        self.screen.keypad(True)
+        self.screen.nodelay(True)
         try:
             curses.set_escdelay(4)
         except (AttributeError, curses.error):
             pass
-        self.screen.keypad(True)
+        try:
+            curses.curs_set(0)
+        except curses.error:
+            pass
         try:
             curses.start_color()
         except curses.error:
             pass
 
-        try:
-            curses.curs_set(0)
-        except curses.error:
-            pass
-        self.screen.nodelay(True)
+        for i, color in PALETTE.items():
+            if i <= 16 and curses.COLORS < 16:  # VGA graphics :3
+                i %= 8
+            if i >= curses.COLORS:
+                continue
+            r, g, b = color.to_bytes(3, "big")
+            curses.init_color(
+                i,
+                int((r / 256) * 1000),
+                int((g / 256) * 1000),
+                int((b / 256) * 1000),
+            )
+        self.colors = {}
+        for i, (name, colors) in enumerate(COLORS.items()):
+            fg = colors[0] or COLORS["default"][0]
+            bg = colors[1] or COLORS["default"][1]
+            if curses.COLORS >= 256:
+                curses.init_pair(i + 1, fg[0], bg[0])
+                self.colors[name] = curses.color_pair(i + 1)
+            elif curses.COLORS >= 16:
+                curses.init_pair(i + 1, fg[1], bg[1])
+                self.colors[name] = curses.color_pair(i + 1)
+            elif curses.COLORS >= 8:
+                # mod 8 since colors 8-15 are 0-7 but brighter
+                curses.init_pair(i + 1, fg[1] % 8, bg[1] % 8)
+                self.colors[name] = curses.color_pair(i + 1)
+            else:
+                self.colors[name] = 0
+
+        self.screen.bkgd(" ", self.colors["default"])
 
         await self.on_resize()
 
@@ -276,10 +342,10 @@ class TetrisTUI:
                     raise RuntimeError("debug_renderer task died!")
                 raise exc
             for i, ln in enumerate(self.debug_lines):
-                self.screen.addstr(i, 0, ln, curses.A_REVERSE)
+                self.screen.addstr(i, 0, ln, self.colors["reverse"])
 
             for i, ln in enumerate(self.output.getvalue().splitlines()[:-16:-1]):
-                self.screen.addstr(self.my - i - 1, 0, ln, curses.A_REVERSE)
+                self.screen.addstr(self.my - i - 1, 0, ln, self.colors["reverse"])
 
         # Recalculate average every 1 second
         if len(self.frames) >= self.hz:
@@ -293,7 +359,15 @@ class TetrisTUI:
 
     async def render_debug(self) -> None:
         """Render the debug menu, if active."""
-        termname = os.getenv("TERM")
+        if curses.COLORS == 0:
+            terminal = "1-bit"
+        elif (bits := math.log2(curses.COLORS)) % 1 == 0:
+            terminal = f"{bits:.0f}-bit"
+        else:
+            terminal = f"{curses.COLORS} colors"
+        terminal += f" ({os.getenv('TERM')})"
+        if curses.can_change_color():
+            terminal += " +palette"
         while True:
             if self.debug:
                 lines = []
@@ -302,10 +376,7 @@ class TetrisTUI:
                 lines.append("%i fps" % self.fps)
                 lines.append("@ %ius ticks" % (self.tick * 1e6))
                 lines.extend(get_memory_info())
-                lines.append(
-                    f"Display: {self.my}x{self.mx}, "
-                    f"{curses.COLORS} colors ({termname})"
-                )
+                lines.append(f"Display: {self.my}x{self.mx} {terminal}")
                 lines.append(type(self.scene).__name__)
                 lines.extend(await self.scene.render_debug())
                 self.debug_lines = lines
@@ -338,6 +409,11 @@ class Scene:
     def screen(self) -> curses.window:
         """Shorthand for `tui.screen`."""
         return self.tui.screen
+
+    @property
+    def colors(self) -> dict[Any, tuple[tuple[int, int], ...]]:
+        """Shorthand for `tui.colors`"""
+        return self.tui.colors
 
     async def on_resize(self) -> None:
         """Resize event."""
@@ -407,7 +483,7 @@ class Menu(Scene):
                 self.view.addstr(i + j, self.cols - len(fmt) - 2, fmt)
 
             if self.selection == j:
-                self.view.chgat(i + j, 2, 32 - 4, curses.A_REVERSE)
+                self.view.chgat(i + j, 2, 32 - 4, self.colors["selection"])
 
     async def on_ch(self, ch: int) -> None:  # noqa: D102
         if ch == curses.KEY_UP:
@@ -556,18 +632,18 @@ class GameScene(Scene):
                     ch = "@ "
                 else:
                     ch = "[]"
-                self.view.addstr(i, j * 2 + 1, ch)
+                self.view.addstr(i, j * 2 + 1, ch, self.colors[x])
 
         if self.game.hold:
             for i, ln in enumerate(self.previews[self.game.hold]):
                 if ln.strip():
-                    self.hold.addstr(i + 1, 0, ln)
+                    self.hold.addstr(i + 1, 0, ln, self.colors[self.game.hold])
         self.hold.border(0, 0, 0, 0, 0, 0, 0, curses.ACS_SBSS)
 
         for i, piece in enumerate(self.game.queue):
             for j, ln in enumerate(self.previews[piece]):
                 if ln.strip():
-                    self.queue.addstr(i * 3 + j + 1, 0, ln)
+                    self.queue.addstr(i * 3 + j + 1, 0, ln, self.colors[piece])
         self.queue.border(0, 0, 0, 0, 0, 0, curses.ACS_SSSB, 0)
 
         scorer = self.game.scorer
@@ -579,7 +655,7 @@ class GameScene(Scene):
             pass  # addstr always raises on writing last char
 
         self.stats.chgat(
-            0, 0, int(scorer.line_clears / scorer.goal * 22), curses.A_REVERSE
+            0, 0, int(scorer.line_clears / scorer.goal * 22), self.colors["reverse"]
         )
 
     async def render_debug(self) -> list[str]:  # noqa: D102
