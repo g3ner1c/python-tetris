@@ -479,13 +479,13 @@ class Menu(Scene):
             self.view.addstr(i + j, 3, name)
             if kind == "choice":
                 choices = opts[0]
-                self.view.addstr(i + j, self.cols - len(fmt) - 2, fmt)
                 index = self.values[name]
                 fmt = f"  {choices[index]}  "
                 if index > 0:
                     fmt = "<" + fmt[1:]
                 if index < len(choices) - 1:
                     fmt = fmt[:-1] + ">"
+                self.view.addstr(i + j, self.cols - len(fmt) - 2, fmt)
 
             if self.selection == j:
                 self.view.chgat(i + j, 2, 32 - 4, self.colors["selection"])
