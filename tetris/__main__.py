@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import configparser
 import curses
 import curses.ascii
 import gc
@@ -16,6 +15,7 @@ import shutil
 import statistics
 import sys
 import time
+from configparser import ConfigParser
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
@@ -198,30 +198,23 @@ class TetrisTUI:
     """TUI Tetris game."""
 
     def __init__(self, config: Optional[str] = None):
-        self.cfg = configparser.ConfigParser()
+        self.cfg = ConfigParser()
         self.cfg.read_dict(DEFAULTS)
 
-        if config is not None:
-            if config == os.devnull:
-                self.path = None
-            else:
-                self.path = Path(config)
-                self.path.mkdir(exist_ok=True)
-                try:
-                    with open(self.path / "tetris.conf", "x") as f:
-                        self.cfg.write(f)
-                except FileExistsError:
-                    with open(self.path / "tetris.conf") as f:
-                        self.cfg.read_string(f.read())
-        else:
+        if config is None:
             self.path = guess_data_path()
-            if self.path is not None:
-                try:
-                    with open(self.path / "tetris.conf", "x") as f:
-                        self.cfg.write(f)
-                except FileExistsError:
-                    with open(self.path / "tetris.conf") as f:
-                        self.cfg.read_string(f.read())
+        elif config == os.devnull:
+            self.path = None
+        else:
+            self.path = Path(config)
+            self.path.mkdir(exist_ok=True)
+        if self.path is not None:
+            try:
+                with open(self.path / "tetris.conf", "x") as f:
+                    self.cfg.write(f)
+            except FileExistsError:
+                with open(self.path / "tetris.conf") as f:
+                    self.cfg.read_string(f.read())
 
         self.keymap = {
             action: {int(k) for k in keys.split(",")}
@@ -453,6 +446,16 @@ class Menu(Scene):
         self.selection = 0
         self.values: dict[str, Any] = {}
 
+    @property
+    def layout(self):
+        return self._layout
+
+    @layout.setter
+    def layout(self, value):
+        self._layout = value
+        for name, kind, *opts in value:
+            if kind == "choice":
+                self.values[name] = 0
     async def on_resize(self):  # noqa: D102
         self.rows = len(self.layout) + 3
         if self.header is not None:
@@ -476,14 +479,13 @@ class Menu(Scene):
             self.view.addstr(i + j, 3, name)
             if kind == "choice":
                 choices = opts[0]
-                index = self.values.get(name, 0)
-                if index == 0:
-                    fmt = "  %s >" % choices[index]
-                elif index == len(choices) - 1:
-                    fmt = "< %s  " % choices[index]
-                else:
-                    fmt = "< %s >" % choices[index]
                 self.view.addstr(i + j, self.cols - len(fmt) - 2, fmt)
+                index = self.values[name]
+                fmt = f"  {choices[index]}  "
+                if index > 0:
+                    fmt = "<" + fmt[1:]
+                if index < len(choices) - 1:
+                    fmt = fmt[:-1] + ">"
 
             if self.selection == j:
                 self.view.chgat(i + j, 2, 32 - 4, self.colors["selection"])
@@ -508,7 +510,6 @@ class Menu(Scene):
             if kind == "choice":
                 # cycle backwards through options
                 choices = opts[0]
-                self.values.setdefault(name, 0)
                 self.values[name] -= 1
                 self.values[name] %= len(choices)
         elif ch == curses.KEY_RIGHT:
@@ -516,7 +517,6 @@ class Menu(Scene):
             if kind == "choice":
                 # cycle forwards through options
                 choices = opts[0]
-                self.values.setdefault(name, 0)
                 self.values[name] += 1
                 self.values[name] %= len(choices)
         elif ch in (curses.KEY_ENTER, ord("\n")):
@@ -721,7 +721,7 @@ def main():
             if input("Clear all data in %s? [y/N] " % path) == "y":
                 shutil.rmtree(path)
                 path.mkdir()
-                cfg = configparser.ConfigParser()
+                cfg = ConfigParser()
                 cfg.read_dict(DEFAULTS)
                 cfg.write(open(path / "tetris.conf", "x"))
                 sys.exit(0)
