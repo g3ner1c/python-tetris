@@ -97,7 +97,7 @@ class BaseGame:
         True if the hold piece can't be swapped (i.e. it was already swapped).
     status : tetris.PlayingStatus
         Enum referencing the current game status. Pushing moves will only work
-        when this is `tetris.PlayingStatus.playing`.
+        when this is `tetris.PlayingStatus.PLAYING`.
 
         .. seealso:: `playing`, `paused`, `lost` properties.
     score : int
@@ -178,7 +178,7 @@ class BaseGame:
         self.queue._size = self.rules.queue_size
 
         self.piece = self.rs.spawn(self.queue.pop())
-        self.status = PlayingStatus.playing
+        self.status = PlayingStatus.PLAYING
         self.delta: Optional[MoveDelta] = None
         self.hold: Optional[PieceType] = None
         self.hold_lock = False
@@ -219,17 +219,17 @@ class BaseGame:
     @property
     def playing(self) -> bool:
         """True if currently playing."""
-        return self.status == PlayingStatus.playing
+        return self.status == PlayingStatus.PLAYING
 
     @property
     def paused(self) -> bool:
         """True if currently idle (i.e. paused)."""
-        return self.status == PlayingStatus.idle
+        return self.status == PlayingStatus.IDLE
 
     @property
     def lost(self) -> bool:
         """True if the game stopped."""
-        return self.status == PlayingStatus.stopped
+        return self.status == PlayingStatus.STOPPED
 
     @property
     def playfield(self) -> Board:
@@ -283,7 +283,7 @@ class BaseGame:
         self.rs = self.engine.rotation_system.from_game(self)
         self.scorer = self.engine.scorer.from_game(self)
         self.piece = self.rs.spawn(self.queue.pop())
-        self.status = PlayingStatus.playing
+        self.status = PlayingStatus.PLAYING
         self.delta = None
         self.hold = None
         self.hold_lock = False
@@ -299,12 +299,12 @@ class BaseGame:
         if self.lost:
             return
         if state or (state is None and self.playing):
-            self.status = PlayingStatus.idle
+            self.status = PlayingStatus.IDLE
         elif state is False or (state is None and self.paused):
-            self.status = PlayingStatus.playing
+            self.status = PlayingStatus.PLAYING
 
     def _lose(self) -> None:
-        self.status = PlayingStatus.stopped
+        self.status = PlayingStatus.STOPPED
 
     def _lock_piece(self) -> None:
         assert self.delta
@@ -395,26 +395,26 @@ class BaseGame:
         ----------
         move : tetris.PartialMove
         """
-        if self.status != PlayingStatus.playing:
+        if self.status != PlayingStatus.PLAYING:
             return
 
         self.delta = MoveDelta(
             kind=move.kind, game=self, x=move.x, y=move.y, r=move.r, auto=move.auto
         )
 
-        if move.kind == MoveKind.drag:
+        if move.kind == MoveKind.DRAG:
             self._move_relative(y=move.y)
 
-        elif move.kind == MoveKind.rotate:
+        elif move.kind == MoveKind.ROTATE:
             self._rotate(turns=move.r)
 
-        elif move.kind == MoveKind.soft_drop:
+        elif move.kind == MoveKind.SOFT_DROP:
             self._move_relative(x=move.x)
 
-        elif move.kind == MoveKind.swap:
+        elif move.kind == MoveKind.SWAP:
             self._swap()
 
-        elif move.kind == MoveKind.hard_drop:
+        elif move.kind == MoveKind.HARD_DROP:
             self._lock_piece()
 
         self.queue._size = self.rules.queue_size

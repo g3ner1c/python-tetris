@@ -80,8 +80,8 @@ class InfinityGravity(Gravity):
 
         if delta is not None:
             if (
-                delta.kind == MoveKind.hard_drop
-                or delta.kind == MoveKind.swap
+                delta.kind == MoveKind.HARD_DROP
+                or delta.kind == MoveKind.SWAP
                 or not self.game.rs.overlaps(
                     minos=piece.minos, px=piece.x + 1, py=piece.y
                 )
@@ -99,14 +99,14 @@ class InfinityGravity(Gravity):
                 self.idle_lock.start()
 
         if self.idle_lock.done or self.lock_resets >= 15:
-            self.game.push(Move(kind=MoveKind.hard_drop, auto=True))
+            self.game.push(Move(kind=MoveKind.HARD_DROP, auto=True))
             self.idle_lock.stop()
             self.lock_resets = 0
 
         since_drop = now - self.last_drop
         if since_drop >= drop_delay:
             self.game.push(
-                Move(kind=MoveKind.soft_drop, x=int(since_drop / drop_delay), auto=True)
+                Move(kind=MoveKind.SOFT_DROP, x=int(since_drop / drop_delay), auto=True)
             )
             self.last_drop = now
             if not self.idle_lock.running and self.game.rs.overlaps(
@@ -162,11 +162,11 @@ class NESGravity(Gravity):
         if since_drop >= drop_delay:
             if self.game.rs.overlaps(minos=piece.minos, px=piece.x + 1, py=piece.y):
                 # hard drop if there is a piece below
-                self.game.push(Move(kind=MoveKind.hard_drop, auto=True))
+                self.game.push(Move(kind=MoveKind.HARD_DROP, auto=True))
             else:
                 self.game.push(
                     Move(
-                        kind=MoveKind.soft_drop,
+                        kind=MoveKind.SOFT_DROP,
                         x=int(since_drop / drop_delay),
                         auto=True,
                     )

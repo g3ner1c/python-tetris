@@ -37,11 +37,11 @@ class GuidelineScorer(Scorer):
         piece = delta.game.piece
         board = delta.game.board
 
-        if delta.kind == MoveKind.soft_drop:  # soft drop
+        if delta.kind == MoveKind.SOFT_DROP:  # soft drop
             if not delta.auto:
                 self.score += delta.x
 
-        elif delta.kind == MoveKind.hard_drop:  # hard drop
+        elif delta.kind == MoveKind.HARD_DROP:  # hard drop
             score = 0
 
             if not delta.auto:  # not done by gravity
@@ -94,7 +94,7 @@ class GuidelineScorer(Scorer):
         self.tspin_mini = False
 
         # useful: https://tetris.wiki/T-Spin#Current_rules
-        if delta.kind == MoveKind.rotate and piece.type == PieceType.T and delta.r != 0:
+        if delta.kind == MoveKind.ROTATE and piece.type == PieceType.T and delta.r != 0:
             px = piece.x
             py = piece.y
             corners = []
@@ -185,11 +185,11 @@ class NESScorer(Scorer):
         return cls(score=score, level=level, initial_level=game.rules.initial_level)
 
     def judge(self, delta: MoveDelta) -> None:  # noqa: D102
-        if delta.kind == MoveKind.soft_drop:
+        if delta.kind == MoveKind.SOFT_DROP:
             if not delta.auto:
                 self.score += delta.x
 
-        elif delta.kind == MoveKind.hard_drop:
+        elif delta.kind == MoveKind.HARD_DROP:
             # NRS doesn't have hard drop score bonus but added anyways for
             # comptability and modularity with other rotation systems
             if not delta.auto:
