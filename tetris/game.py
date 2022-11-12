@@ -134,6 +134,8 @@ class BaseGame:
             Rule("initial_level", int, 1),
             Rule("queue_size", int, 4),
             Rule("seed", (int, bytes, str, type(None)), None),
+            Rule("can_180_spin", bool, True),
+            Rule("can_hard_drop", bool, True),
         )
 
         if seed is not None:
@@ -379,6 +381,8 @@ class BaseGame:
 
     def _rotate(self, turns: int) -> None:
         assert self.delta
+        if turns == 2 and not self.rules.can_180_spin:
+            return
         x = self.piece.x
         y = self.piece.y
         r = self.piece.r
@@ -415,7 +419,8 @@ class BaseGame:
             self._swap()
 
         elif move.kind == MoveKind.HARD_DROP:
-            self._lock_piece()
+            if move.auto or self.rules.can_hard_drop:
+                self._lock_piece()
 
         self.queue._size = self.rules.queue_size
         self.queue._safe_fill()

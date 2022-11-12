@@ -123,6 +123,8 @@ class NESGravity(Gravity):
     See <https://tetris.wiki/Tetris_(NES,_Nintendo)>.
     """
 
+    rule_overrides = {"can_hard_drop": False}
+
     def __init__(self, game: BaseGame):
         super().__init__(game)
 
