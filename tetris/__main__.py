@@ -16,6 +16,7 @@ import statistics
 import sys
 import time
 from configparser import ConfigParser
+from contextlib import suppress
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
@@ -68,7 +69,7 @@ Usage:
 Flags:
     -h, --help         This message!
     -p, --path <PATH>  Specify directory to store data [default: os-dependent]
-    --regen            Clear user data and add defaults
+    --clear            Clear all user data and exit
     --version          Output the version and exit\
 """
 DEFAULTS: dict[str, dict[str, Any]] = {
@@ -207,8 +208,8 @@ class TetrisTUI:
             self.path = None
         else:
             self.path = Path(config)
-            self.path.mkdir(exist_ok=True)
         if self.path is not None:
+            self.path.mkdir(exist_ok=True)
             try:
                 with open(self.path / "tetris.conf", "x") as f:
                     self.cfg.write(f)
@@ -269,47 +270,47 @@ class TetrisTUI:
         curses.raw(True)
         self.screen.keypad(True)
         self.screen.nodelay(True)
-        try:
+        with suppress(AttributeError, curses.error):
             curses.set_escdelay(4)
-        except (AttributeError, curses.error):
-            pass
-        try:
+        with suppress(curses.error):
             curses.curs_set(0)
-        except curses.error:
-            pass
-        try:
+        with suppress(curses.error):
             curses.start_color()
-        except curses.error:
-            pass
 
+        color_count = getattr(curses, "COLORS", 0)
         for i, color in PALETTE.items():
-            if i <= 16 and curses.COLORS < 16:  # VGA graphics :3
+            if i <= 16 and color_count < 16:  # VGA graphics :3
                 i %= 8
-            if i >= curses.COLORS:
+            if i >= color_count:
                 continue
             r, g, b = color.to_bytes(3, "big")
-            curses.init_color(
-                i,
-                int((r / 256) * 1000),
-                int((g / 256) * 1000),
-                int((b / 256) * 1000),
-            )
+            with suppress(curses.error):
+                curses.init_color(
+                    i,
+                    int((r / 256) * 1000),
+                    int((g / 256) * 1000),
+                    int((b / 256) * 1000),
+                )
         self.colors = {}
+        default_fg, default_bg = COLORS["default"]
+        assert default_fg is not None and default_bg is not None
         for i, (name, colors) in enumerate(COLORS.items()):
-            fg = colors[0] or COLORS["default"][0]
-            bg = colors[1] or COLORS["default"][1]
-            assert fg and bg
-            if curses.COLORS >= 256:
+            fg = colors[0] or default_fg
+            bg = colors[1] or default_bg
+            if color_count >= 256:
+                # 8-bit color, use default
                 curses.init_pair(i + 1, fg[0], bg[0])
                 self.colors[name] = curses.color_pair(i + 1)
-            elif curses.COLORS >= 16:
+            elif color_count >= 16:
+                # 4-bit color, use fallback
                 curses.init_pair(i + 1, fg[1], bg[1])
                 self.colors[name] = curses.color_pair(i + 1)
-            elif curses.COLORS >= 8:
-                # mod 8 since colors 8-15 are 0-7 but brighter
+            elif color_count >= 8:
+                # 3-bit color, use fallback mod 8 (only bright colors)
                 curses.init_pair(i + 1, fg[1] % 8, bg[1] % 8)
                 self.colors[name] = curses.color_pair(i + 1)
             else:
+                # no color support
                 self.colors[name] = 0
 
         self.screen.bkgd(" ", self.colors["default"])
@@ -334,9 +335,7 @@ class TetrisTUI:
         if self.debug:
             if self.debug_renderer.done():
                 exc = self.debug_renderer.exception()
-                if exc is None:
-                    raise RuntimeError("debug_renderer task died!")
-                raise exc
+                raise RuntimeError("debug renderer task died!") from exc
             for i, ln in enumerate(self.debug_lines):
                 self.screen.addstr(i, 0, ln, self.colors["reverse"])
 
@@ -355,12 +354,13 @@ class TetrisTUI:
 
     async def render_debug(self) -> None:
         """Render the debug menu, if active."""
-        if curses.COLORS == 0:
+        color_count = getattr(curses, "COLORS", 0)
+        if color_count == 0:
             terminal = "1-bit"
-        elif (bits := math.log2(curses.COLORS)) % 1 == 0:
+        elif (bits := math.log2(color_count)) % 1 == 0:
             terminal = f"{bits:.0f}-bit"
         else:
-            terminal = f"{curses.COLORS} colors"
+            terminal = f"{color_count} colors"
         terminal += f" ({os.getenv('TERM')})"
         if curses.can_change_color():
             terminal += " +palette"
@@ -369,8 +369,8 @@ class TetrisTUI:
                 lines = []
                 lines.append(VERSION)
                 lines.append(ENVIRONMENT)
-                lines.append("%i fps" % self.fps)
-                lines.append("@ %ius ticks" % (self.tick * 1e6))
+                lines.append(f"{self.fps:.0f} fps")
+                lines.append(f"@ {self.tick*1e6:.0f}us ticks")
                 lines.extend(get_memory_info())
                 lines.append(f"Display: {self.my}x{self.mx} {terminal}")
                 lines.append(type(self.scene).__name__)
@@ -433,12 +433,6 @@ class Menu(Scene):
 
     header: Optional[str]
     title: Optional[str]
-    layout: list[
-        Union[
-            tuple[str, Literal["normal", "off"]],
-            tuple[str, Literal["choice"], list[str]],
-        ]
-    ]
     cols: int
 
     def __init__(self, tui: TetrisTUI):
@@ -447,7 +441,15 @@ class Menu(Scene):
         self.values: dict[str, Any] = {}
 
     @property
-    def layout(self):
+    def layout(
+        self,
+    ) -> list[
+        Union[
+            tuple[str, Literal["normal", "off"]],
+            tuple[str, Literal["choice"], list[str]],
+        ]
+    ]:
+        """The menu's layout."""
         return self._layout
 
     @layout.setter
@@ -456,6 +458,7 @@ class Menu(Scene):
         for name, kind, *opts in value:
             if kind == "choice":
                 self.values[name] = 0
+
     async def on_resize(self):  # noqa: D102
         self.rows = len(self.layout) + 3
         if self.header is not None:
@@ -597,15 +600,20 @@ class GameScene(Scene):
         self.previews = {}
         for piece in tetris.PieceType:
             minos = self.game.rs.spawn(piece).minos
-            shape = tetris.board.Board.zeros((4, 4))
-            for x, y in minos:
-                shape[x, y] = True
-
             cols = [y for x, y in minos]
             max_col = max(cols)
             min_col = min(cols)
+            rows = [x for x, y in minos]
+            max_row = max(rows)
+            min_row = min(rows)
+
+            shape = tetris.board.Board.zeros((4, 4))
+            for x, y in minos:
+                # justify shape so it's bottom is at the second row
+                shape[x - min(max_row - 1, min_row), y] = True
+
             # center the piece within 8 columns
-            pad = " " * ((8 - (max_col - min_col) * 2) // 2)
+            pad = " " * (4 - max_col + min_col)
             trim = min_col * 2
             self.previews[piece] = [
                 pad + "".join("[]" if x else "  " for x in ln)[trim:].rstrip()
@@ -615,7 +623,7 @@ class GameScene(Scene):
     async def on_resize(self):  # noqa: D102
         self.view = self.tui.centeredsubwin(25, 22, dy=-4)
         self.hold = self.tui.centeredsubwin(4, 10, dy=-18, dx=-30)
-        self.queue = self.tui.centeredsubwin(13, 10, dy=-8, dx=30)
+        self.queue = self.tui.centeredsubwin(13, 10, dy=-9, dx=30)
         self.stats = self.tui.centeredsubwin(2, 22, dy=23)
 
     async def render(self):  # noqa: D102
@@ -663,15 +671,14 @@ class GameScene(Scene):
 
     async def render_debug(self) -> list[str]:  # noqa: D102
         game = self.game
-        return [
-            "",
-            f"XYR: {game.piece.x} / {game.piece.y} / {game.piece.r}",
-            "Engine:",
-            *[
-                "  " + type(x).__name__
-                for x in (game.gravity, game.queue, game.rs, game.scorer)
-            ],
-        ]
+        lines = []
+        lines.append("")
+        lines.append(f"XYR: {game.piece.x} / {game.piece.y} / {game.piece.r}")
+        lines.append("Engine:")
+        for part in (game.gravity, game.queue, game.rs, game.scorer):
+            lines.append("  " + type(part).__name__)
+
+        return lines
 
     async def on_ch(self, ch: int) -> None:  # noqa: D102
         if ch in self.tui.keymap["pause"]:
@@ -686,16 +693,16 @@ class GameScene(Scene):
 def main():
     """Entry point."""
     try:
-        opts, args = getopt.getopt(
-            sys.argv[1:], "hp:", ["help", "version", "path=", "regen"]
+        opts, _ = getopt.getopt(
+            sys.argv[1:], "hp:", ["help", "version", "path=", "clear"]
         )
 
     except getopt.GetoptError as e:
         print(USAGE)
-        sys.exit(e)
+        print()
+        sys.exit(str(e))
 
     try:
-        action = "play"
         data_path = None
         for o, v in opts:
             if o in ("-h", "--help"):
@@ -704,29 +711,20 @@ def main():
             if o in ("--version",):
                 print(VERSION, "@", ENVIRONMENT)
                 sys.exit(0)
+            if o in ("--clear",):
+                path = guess_data_path()
+                if path is None or not path.exists():
+                    sys.exit(f"nothing to clear (path is {path})")
+
+                if input(f"Clear all data in {path}? [y/N] ") in ("y", "yes"):
+                    shutil.rmtree(path)
+                    sys.exit(0)
+
+                sys.exit("aborted")
             if o in ("-p", "--path"):
                 data_path = v
-            if o in ("--regen",):
-                action = "regen"
 
-        if action == "play":
-            asyncio.run(TetrisTUI(data_path).main())
-        elif action == "regen":
-            if data_path is None:
-                path = guess_data_path()
-                if path is None:
-                    sys.exit("can't determine data path! please use --path")
-            else:
-                path = Path(data_path)
-            if input("Clear all data in %s? [y/N] " % path) == "y":
-                shutil.rmtree(path)
-                path.mkdir()
-                cfg = ConfigParser()
-                cfg.read_dict(DEFAULTS)
-                cfg.write(open(path / "tetris.conf", "x"))
-                sys.exit(0)
-
-            sys.exit("aborted")
+        asyncio.run(TetrisTUI(data_path).main())
     except KeyboardInterrupt:
         pass
 
