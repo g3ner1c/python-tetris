@@ -2,9 +2,8 @@
 
 import importlib.metadata
 
-from tetris import engine, game, impl, types
 from tetris.board import Board
-from tetris.engine import Engine
+from tetris.engine import Engine, EngineFactory
 from tetris.game import BaseGame
 from tetris.types import (
     MinoType,
@@ -21,10 +20,8 @@ __version__ = importlib.metadata.version("tetris")
 __all__ = (
     "BaseGame",
     "Board",
-    "engine",
     "Engine",
-    "game",
-    "impl",
+    "EngineFactory",
     "MinoType",
     "Move",
     "MoveDelta",
@@ -33,7 +30,6 @@ __all__ = (
     "Piece",
     "PieceType",
     "PlayingStatus",
-    "types",
 )
 
 del importlib
