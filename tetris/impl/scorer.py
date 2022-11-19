@@ -59,7 +59,7 @@ class GuidelineScorer(Scorer):
             else:
                 self.combo = 0
 
-            perfect_clear = all(all(row) or not any(row) for row in board)
+            perfect_clear = all(not any(row) for row in board)
 
             if perfect_clear:
                 score += [0, 800, 1200, 1800, 2000][line_clears]

@@ -12,6 +12,7 @@ import math
 import os
 import platform
 import shutil
+import signal
 import statistics
 import sys
 import time
@@ -250,6 +251,13 @@ class TetrisTUI:
                     continue
                 if ch == ord("c") & 0x1F:  # Ctrl+C
                     raise KeyboardInterrupt
+                if ch == ord("z") & 0x1F:  # Ctrl+Z
+                    if not hasattr(os, "kill") and hasattr(signal, "SIGTSTP"):
+                        # SIGTSTP is *nix-only
+                        continue
+                    if isinstance(self.scene, GameScene):
+                        self.scene.game.pause(True)
+                    os.kill(os.getpid(), signal.SIGTSTP)
                 if ch == curses.KEY_RESIZE:
                     await self.on_resize()
                 elif ch in self.keymap["debug"]:
