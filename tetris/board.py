@@ -47,7 +47,7 @@ def _reshape(old_shape: tuple[int, ...], new_shape: tuple[int, ...]) -> tuple[in
     for i, j in enumerate(new_shape):
         if j < 0:
             if unknown_dim is not None:
-                raise ValueError("can't specify two uknown dimensions")
+                raise ValueError("can't specify two unknown dimensions")
             unknown_dim = i
 
     if unknown_dim is not None:

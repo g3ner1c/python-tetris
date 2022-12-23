@@ -96,7 +96,7 @@ class EnginePart(abc.ABC):
     rules : Ruleset
         Defines rules for this specific object. *Must* have a name set.
     rule_overrides : dict[str, Any]
-        Mapping of rule names to overriden values.
+        Mapping of rule names to overridden values.
 
     Notes
     -----

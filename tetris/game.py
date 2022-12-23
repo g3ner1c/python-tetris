@@ -35,7 +35,7 @@ class BaseGame:
         An engine factory object, which builds a mutable engine object for the
         game's core logic. Defaults to using a modern preset.
     rule_overrides : dict[str, Any], optional
-        Mapping of rule names to overriden values.
+        Mapping of rule names to overridden values.
 
         .. seealso:: `Ruleset`, `Rule`
     board : board_like
@@ -48,7 +48,7 @@ class BaseGame:
             The *visible* board is half as short as the given (*internal*)
             board. This is so as to "buffer" the board from large attacks.
     level : int, optional
-        The inital level to pass to `tetris.engine.Scorer`. Optional, defaults
+        The initial level to pass to `tetris.engine.Scorer`. Optional, defaults
         to using the `"initial_level"` rule.
 
         .. hint::
@@ -57,7 +57,7 @@ class BaseGame:
             might apply different scoring when the user starts on a different
             level. If that's not your case, use that rule instead of this.
     score : int, default = 0
-        The inital score to pass to `tetris.engine.Scorer`.
+        The initial score to pass to `tetris.engine.Scorer`.
     queue : Iterable[int], optional
         The initial pieces to pass to `tetris.engine.Queue`.
 

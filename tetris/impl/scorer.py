@@ -153,7 +153,7 @@ class NESScorer(Scorer):
 
     Notes
     -----
-    This class implements the orginal scoring system found in the Nintendo NES
+    This class implements the original scoring system found in the Nintendo NES
     Tetris games.
 
     A more thorough explanation can be found at <https://tetris.wiki/Scoring>.
@@ -191,7 +191,7 @@ class NESScorer(Scorer):
 
         elif delta.kind == MoveKind.HARD_DROP:
             # NRS doesn't have hard drop score bonus but added anyways for
-            # comptability and modularity with other rotation systems
+            # compatibility and modularity with other rotation systems
             if not delta.auto:
                 self.score += delta.x
             score = 0
