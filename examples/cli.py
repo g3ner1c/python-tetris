@@ -93,8 +93,8 @@ def main(screen: curses.window) -> None:
         status.addstr(7, 2, " Score ", curses.A_STANDOUT)
         status.addstr(8, 4, format(game.score, ","))
 
-        line_clears = game.scorer.line_clears  # type: ignore
-        goal = game.scorer.goal  # type: ignore
+        line_clears = game.scorer.line_clears
+        goal = game.scorer.goal
         status.addstr(10, 2, " Level ", curses.A_STANDOUT)
         status.addstr(11, 4, f"{game.level}")
         status.addstr(

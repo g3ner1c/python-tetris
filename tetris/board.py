@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any, Optional, SupportsIndex, Union, cast, ove
 
 from tetris.types import BoardLike, MinoType, PieceType, _SupportsArray
 
+__all__ = ("Board",)
+
 _BAD_INDEX_TYPE = "board indices must be integers, slices or tuples of integers, not {}"
 _OUT_OF_BOUNDS = "board index {} out of bounds for axis {}"
 _BAD_VALUE_TYPE = "board values must be integers"
@@ -31,7 +33,7 @@ def _broadcast(board: Any, shape: tuple[int, ...]) -> Board:
         if board._shape != shape:
             raise ValueError(_BAD_BROADCAST.format(board._shape, shape))
         # same shapes, no broadcasting
-        return board.copy()
+        return cast(Board, board).copy()
 
     if board._shape[0] != shape[1]:
         raise ValueError(_BAD_BROADCAST.format(board._shape, shape))
@@ -133,7 +135,7 @@ class Board:
     _offset: int
     _strides: tuple[int, ...]
     _base: Optional[Board]
-    _data: array.array
+    _data: array.array[int]
 
     __slots__ = (
         "_shape",
@@ -257,7 +259,7 @@ class Board:
     @classmethod
     def frombuffer(
         cls,
-        buffer: Union[array.array, Iterable[int]],
+        buffer: Union[array.array[int], Iterable[int]],
         shape: tuple[int, ...],
         offset: int = 0,
         strides: Optional[tuple[int, ...]] = None,
@@ -315,7 +317,7 @@ class Board:
     # https://numpy.org/doc/1.23/reference/arrays.interface.html#python-side
 
     @property
-    def __array_interface__(self):
+    def __array_interface__(self) -> dict[str, Any]:
         return {
             "data": self._data,
             "offset": self._offset,
@@ -351,7 +353,7 @@ class Board:
         return self._base
 
     @property
-    def data(self) -> array.array:
+    def data(self) -> array.array[int]:
         """The board's raw data, as an `array.array`.
 
         This is always a copy. For views, this only contains the elements it
@@ -428,7 +430,7 @@ class Board:
                 raise IndexError(_OUT_OF_BOUNDS.format(key[1], 1))
             return a, b
 
-        raise TypeError(_BAD_INDEX_TYPE.format(type(k).__name__))
+        raise TypeError(_BAD_INDEX_TYPE.format(type(key).__name__))
 
     def _contiguous_blocks(self, key: slice) -> Iterator[tuple[int, int, int]]:
         """Yield largest contiguous blocks for a given slice."""
@@ -484,11 +486,8 @@ class Board:
                 (self._strides[0] * step, *self._strides[1:]),
             )
 
-        if isinstance(key, tuple):
-            a, b = key
-            return self._data[
-                self._offset + a * self._strides[0] + b * self._strides[1]
-            ]
+        a, b = key
+        return self._data[self._offset + a * self._strides[0] + b * self._strides[1]]
 
     def __setitem__(
         self, key: Union[int, slice, tuple[int, int]], value: Union[Board, int]
@@ -508,12 +507,12 @@ class Board:
                 if not hasattr(value, "__index__"):
                     raise TypeError(_BAD_VALUE_TYPE)
                 if self._ndim == 1:
-                    self._data[offset] = int(value)  # type: ignore[arg-type]
+                    self._data[offset] = int(value)
                 else:
                     length = self._shape[1]
                     stride = self._strides[1]
                     for i in range(offset, offset + length, stride):
-                        self._data[i] = int(value)  # type: ignore[arg-type]
+                        self._data[i] = int(value)
 
         elif isinstance(key, slice):
             if hasattr(value, "__len__"):
@@ -531,20 +530,18 @@ class Board:
 
                 for start, stop, step in self._contiguous_blocks(key):
                     for i in range(start, stop, step):
-                        self._data[i] = int(value)  # type: ignore[arg-type]
+                        self._data[i] = int(value)
 
-        elif isinstance(key, tuple):
+        else:
             a, b = key
             if not hasattr(value, "__index__"):
                 raise TypeError(_BAD_VALUE_TYPE)
 
             self._data[
                 self._offset + a * self._strides[0] + b * self._strides[1]
-            ] = int(
-                value  # type: ignore[arg-type]
-            )
+            ] = int(value)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Any]:
         start = self._offset
         stop = self._offset + self._strides[0] * self._shape[0]
         stride = self._strides[0]

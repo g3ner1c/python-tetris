@@ -24,6 +24,18 @@ from typing import Any, Literal, Optional, Union
 import tetris
 from tetris import MinoType
 
+if sys.version_info > (3, 10):
+    from typing import TypeAlias
+
+    Layout: TypeAlias
+
+Layout = list[
+    Union[
+        tuple[str, Literal["normal", "off"]],
+        tuple[str, Literal["choice"], list[str]],
+    ]
+]
+
 # NOTE: `tracemalloc` may be enabled at runtime, but will not track memory that
 # is already allocated. it should be enabled as early as possible by setting
 # `PYTHONTRACEMALLOC` to 1 or higher, or providing `-Xtracemalloc`::
@@ -178,7 +190,7 @@ def guess_data_path() -> Optional[Path]:
 def get_memory_info() -> list[str]:
     """Return memory info according to the interpreter, if possible."""
     if PYPY:
-        stats: Any = gc.get_stats()  # type: ignore
+        stats: Any = gc.get_stats()
         return [
             f"Mem: {stats.memory_used_sum} (↑{stats.peak_memory})",
             f"Allocated: {stats.memory_allocated_sum}",
@@ -237,7 +249,7 @@ class TetrisTUI:
         # combined stdout/stderr replacement
         self.output = io.StringIO()
 
-    async def main(self):
+    async def main(self) -> None:
         """Application loop."""
         sys.stdout = sys.stderr = self.output
         self.screen = curses.initscr()
@@ -272,7 +284,7 @@ class TetrisTUI:
             sys.stderr = sys.__stderr__
             print(self.output.getvalue(), end="")
 
-    async def setup(self):
+    async def setup(self) -> None:
         """Prepare the TUI for the main loop."""
         curses.noecho()
         curses.raw(True)
@@ -325,16 +337,16 @@ class TetrisTUI:
 
         await self.on_resize()
 
-        self.debug_lines = []
+        self.debug_lines: list[str] = []
         self.debug_renderer = asyncio.create_task(self.render_debug())
 
-    async def on_resize(self):
+    async def on_resize(self) -> None:
         """Update UI dependant on terminal size."""
         self.my, self.mx = self.screen.getmaxyx()
         self.screen.clear()
         await self.scene.on_resize()
 
-    async def render(self):
+    async def render(self) -> None:
         """Render the screen."""
         t = time.perf_counter()
 
@@ -449,31 +461,24 @@ class Menu(Scene):
         self.values: dict[str, Any] = {}
 
     @property
-    def layout(
-        self,
-    ) -> list[
-        Union[
-            tuple[str, Literal["normal", "off"]],
-            tuple[str, Literal["choice"], list[str]],
-        ]
-    ]:
+    def layout(self) -> Layout:
         """The menu's layout."""
         return self._layout
 
     @layout.setter
-    def layout(self, value):
+    def layout(self, value: Layout) -> None:
         self._layout = value
-        for name, kind, *opts in value:
+        for name, kind, *_ in value:
             if kind == "choice":
                 self.values[name] = 0
 
-    async def on_resize(self):  # noqa: D102
+    async def on_resize(self) -> None:  # noqa: D102
         self.rows = len(self.layout) + 3
         if self.header is not None:
             self.rows += 3
         self.view = self.tui.centeredsubwin(self.rows, self.cols)
 
-    async def render(self):  # noqa: D102
+    async def render(self) -> None:  # noqa: D102
         self.screen.erase()
 
         self.view.border()
@@ -568,7 +573,7 @@ class MainMenu(Menu):
 class CreditsScene(Scene):
     """Credits sub-menu."""
 
-    async def on_resize(self):  # noqa: D102
+    async def on_resize(self) -> None:  # noqa: D102
         text = """\
             python-tetris is free software!
             (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧
@@ -608,10 +613,10 @@ class GameScene(Scene):
         self.previews = {}
         for piece in tetris.PieceType:
             minos = self.game.rs.spawn(piece).minos
-            cols = [y for x, y in minos]
+            cols = [y for _, y in minos]
             max_col = max(cols)
             min_col = min(cols)
-            rows = [x for x, y in minos]
+            rows = [x for x, _ in minos]
             max_row = max(rows)
             min_row = min(rows)
 
@@ -628,13 +633,13 @@ class GameScene(Scene):
                 for ln in shape
             ]
 
-    async def on_resize(self):  # noqa: D102
+    async def on_resize(self) -> None:  # noqa: D102
         self.view = self.tui.centeredsubwin(25, 22, dy=-4)
         self.hold = self.tui.centeredsubwin(4, 10, dy=-18, dx=-30)
         self.queue = self.tui.centeredsubwin(13, 10, dy=-9, dx=30)
         self.stats = self.tui.centeredsubwin(2, 22, dy=23)
 
-    async def render(self):  # noqa: D102
+    async def render(self) -> None:  # noqa: D102
         t = time.perf_counter()
         self.game.tick()
         self.tui.tick = time.perf_counter() - t
@@ -698,7 +703,7 @@ class GameScene(Scene):
                     break
 
 
-def main():
+def main() -> None:
     """Entry point."""
     try:
         opts, _ = getopt.getopt(

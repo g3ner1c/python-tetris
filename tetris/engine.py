@@ -7,7 +7,7 @@ import dataclasses
 import random
 import secrets
 from collections.abc import Iterable, Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Optional, final, overload
+from typing import TYPE_CHECKING, Any, Optional, Union, final, overload
 
 from tetris.board import Board
 from tetris.types import Minos, MoveDelta, Piece, PieceType, Ruleset, Seed
@@ -146,7 +146,7 @@ class Gravity(EnginePart):
         ...
 
 
-class Queue(EnginePart, Sequence):
+class Queue(EnginePart, Sequence[PieceType]):
     """Abstract base class for queue implementations.
 
     This class extends `collections.abc.Sequence` and consists of `PieceType`
@@ -197,7 +197,7 @@ class Queue(EnginePart, Sequence):
         self._size = 7  # May be changed by a game class
         self._safe_fill()
 
-    def _safe_fill(self):
+    def _safe_fill(self) -> None:
         prev_size = len(self._pieces)
         while len(self._pieces) <= self._size:
             self.fill()
@@ -246,7 +246,7 @@ class Queue(EnginePart, Sequence):
     def __getitem__(self, i: slice) -> list[PieceType]:
         ...
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: Union[int, slice]) -> Union[list[PieceType], PieceType]:
         return self._pieces[: self._size][i]
 
     def __len__(self) -> int:
@@ -313,7 +313,9 @@ class RotationSystem(EnginePart):
     def overlaps(self, minos: Minos, px: int, py: int) -> bool:
         ...
 
-    def overlaps(self, piece=None, minos=None, px=None, py=None):
+    def overlaps(  # type: ignore
+        self, piece: Any = None, minos: Any = None, px: Any = None, py: Any = None
+    ) -> bool:
         """Check if a piece's minos would overlap with anything.
 
         This method expects either `piece`, or `minos`, `px` and `py` to be

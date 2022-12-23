@@ -84,7 +84,7 @@ class Rule:
     type: Union[type, tuple[type, ...]]
     default: Any
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.value: Any = self.default
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -214,7 +214,7 @@ class PlayingStatus(enum.Enum):
     IDLE = enum.auto()
     STOPPED = enum.auto()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"
 
 
@@ -459,8 +459,6 @@ class MoveDelta(PartialMove):
         self.rr = self.r
         self.clears = clears or []
         self.auto = auto
-
-    __eq__ = object.__eq__
 
 
 @final
