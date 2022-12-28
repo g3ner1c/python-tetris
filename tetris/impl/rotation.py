@@ -297,7 +297,7 @@ class TetrioSRS(SRS):
     symmetrical I-piece kicks which is on by default, called *SRS+* in-game.
     """
 
-    rule_overrides = {"can_180_spin": False}
+    rule_overrides = {"can_180_spin": True}
 
     tetrio_180_kicks: ClassVar[KickTable] = {
         (0, 2): ((-1, +0), (-1, +1), (-1, -1), (+0, +1), (+0, -1)),  # 0 -> 2
