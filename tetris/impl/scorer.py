@@ -119,32 +119,20 @@ class GuidelineScorer(Scorer):
             #  - the piece's center is not 1,1 (should this be checked?)
             #  - its not T-shaped
             if back is not None:
-                if (
-                    # if there are two corners in front edge...
-                    corners[(back + 2) % 4]
-                    and corners[(back + 3) % 4]
-                ) and (
-                    # ...and at least one corner in back edge
-                    corners[back]
-                    or corners[(back + 1) % 4]
-                ):
+                front_corners = corners[(back + 2) % 4] + corners[(back + 3) % 4]
+                back_corners = corners[(back + 0) % 4] + corners[(back + 1) % 4]
+                # if there are two corners in the front edge..
+                if front_corners == 2 and back_corners >= 1:
                     # it's a proper t-spin!
                     self.tspin = True
-                elif (
-                    # but, if there is one corner in front edge...
-                    corners[(back + 2) % 4]
-                    or corners[(back + 3) % 4]
-                ) and (
-                    # and two in back edge...
-                    corners[back]
-                    and corners[(back + 1) % 4]
-                ):
+                # but, if there is one corner in front edge and two in the back..
+                elif front_corners == 1 and back_corners == 2:
                     # this is still a tspin!
                     if abs(delta.x) == 2 and abs(delta.y) == 1:
-                        # the piece was kicked far, still proper t-spin!
+                        # the piece was kicked far, proper t-spin!
                         self.tspin = True
                     else:
-                        # otherwise.. mini-tspin
+                        # last case, mini-tspin
                         self.tspin_mini = True
 
 
