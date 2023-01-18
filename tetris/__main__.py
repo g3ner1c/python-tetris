@@ -610,6 +610,7 @@ class GameScene(Scene):
     ):
         super().__init__(tui)
         self.game = tetris.BaseGame(preset, rules)
+        self.action_text: set[str] = set()
         self.previews = {}
         for piece in tetris.PieceType:
             minos = self.game.rs.spawn(piece).minos
@@ -638,6 +639,7 @@ class GameScene(Scene):
         self.hold = self.tui.centeredsubwin(4, 10, dy=-18, dx=-30)
         self.queue = self.tui.centeredsubwin(13, 10, dy=-9, dx=30)
         self.stats = self.tui.centeredsubwin(2, 22, dy=23)
+        self.left_text = self.tui.centeredsubwin(8, 14, dy=12, dx=-35)
 
     async def render(self) -> None:  # noqa: D102
         t = time.perf_counter()
@@ -672,15 +674,25 @@ class GameScene(Scene):
 
         scorer = self.game.scorer
         level = f"{scorer.level} [{scorer.line_clears}/{scorer.goal}]"
-        try:
-            self.stats.addstr(0, 0, level.center(22))
-            self.stats.addstr(1, 0, format(self.game.score, ",").center(22))
-        except curses.error:
-            pass  # addstr always raises on writing last char
+
+        self.stats.insstr(0, 0, level.center(22))
+        self.stats.insstr(1, 0, format(self.game.score, ",").center(22))
 
         self.stats.chgat(
             0, 0, int(scorer.line_clears / scorer.goal * 22), self.colors["reverse"]
         )
+
+        left_lines = []
+        if (b2b := getattr(self.game.scorer, "back_to_back")) > 1:
+            left_lines.append("Back-to-back!")
+            left_lines.append(f"[{b2b}x]")
+        if (combo := getattr(self.game.scorer, "combo", 0)) > 1:
+            left_lines.append(f"{combo}x combo!")
+
+        left_lines.extend(self.action_text)
+
+        for i, line in enumerate(left_lines):
+            self.left_text.addstr(i, 14 - len(line), line)
 
     async def render_debug(self) -> list[str]:  # noqa: D102
         game = self.game
@@ -700,6 +712,14 @@ class GameScene(Scene):
             for action, keys in self.tui.keymap.items():
                 if ch in keys and (move := MOVES.get(action)):
                     self.game.push(move)
+                    if getattr(self.game.scorer, "tspin", False):
+                        self.action_text.add("T-Spin!")
+                    elif "T-Spin!" in self.action_text:
+                        self.action_text.remove("T-Spin!")
+                    if getattr(self.game.scorer, "tspin_mini", False):
+                        self.action_text.add("T-Spin mini!")
+                    elif "T-Spin mini!" in self.action_text:
+                        self.action_text.remove("T-Spin mini!")
                     break
 
 
