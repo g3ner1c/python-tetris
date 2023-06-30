@@ -6,9 +6,8 @@ import tetris
 sys.path.insert(0, path.abspath("../tetris"))
 
 project = "python-tetris"
-author = 'Sofia "dzshn" N. L.'
-copyright = '2021-2022, Sofia "dzshn" N. L.'
-author = 'Sofia "dzshn" N. L.'
+author = "Sofia N. Lima"
+copyright = "2021-2022, Sofia N. Lima"
 release = tetris.__version__
 
 extensions = [
@@ -29,14 +28,13 @@ html_static_path = ["_static"]
 
 autodoc_member_order = "bysource"
 autodoc_type_aliases = {
-    "Board": "tetris.types.Board",
     "Minos": "tetris.types.Minos",
     "Seed": "tetris.types.Seed",
+    "board_like": "tetris.types.BoardLike",
 }
 
 intersphinx_mapping = {
     "py": ("https://docs.python.org/3", None),
-    "np": ("https://numpy.org/doc/stable", None),
 }
 
 python_use_unqualified_type_names = True

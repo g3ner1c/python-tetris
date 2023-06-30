@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import time
-from typing import Final, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Final, Optional
 
 from tetris.engine import Gravity
-from tetris.types import Move
-from tetris.types import MoveDelta
-from tetris.types import MoveKind
+from tetris.types import Move, MoveDelta, MoveKind
 
 if TYPE_CHECKING:
     from tetris import BaseGame
@@ -81,7 +79,13 @@ class InfinityGravity(Gravity):
         now = time.monotonic_ns()
 
         if delta is not None:
-            if delta.kind == MoveKind.hard_drop:
+            if (
+                delta.kind == MoveKind.HARD_DROP
+                or delta.kind == MoveKind.SWAP
+                or not self.game.rs.overlaps(
+                    minos=piece.minos, px=piece.x + 1, py=piece.y
+                )
+            ):
                 self.idle_lock.stop()
                 self.lock_resets = 0
 
@@ -95,14 +99,14 @@ class InfinityGravity(Gravity):
                 self.idle_lock.start()
 
         if self.idle_lock.done or self.lock_resets >= 15:
-            self.game.push(Move(kind=MoveKind.hard_drop, auto=True))
+            self.game.push(Move(kind=MoveKind.HARD_DROP, auto=True))
             self.idle_lock.stop()
             self.lock_resets = 0
 
         since_drop = now - self.last_drop
         if since_drop >= drop_delay:
             self.game.push(
-                Move(kind=MoveKind.soft_drop, x=int(since_drop / drop_delay), auto=True)
+                Move(kind=MoveKind.SOFT_DROP, x=int(since_drop / drop_delay), auto=True)
             )
             self.last_drop = now
             if not self.idle_lock.running and self.game.rs.overlaps(
@@ -118,6 +122,8 @@ class NESGravity(Gravity):
     -----
     See <https://tetris.wiki/Tetris_(NES,_Nintendo)>.
     """
+
+    rule_overrides = {"can_hard_drop": False}
 
     def __init__(self, game: BaseGame):
         super().__init__(game)
@@ -158,11 +164,11 @@ class NESGravity(Gravity):
         if since_drop >= drop_delay:
             if self.game.rs.overlaps(minos=piece.minos, px=piece.x + 1, py=piece.y):
                 # hard drop if there is a piece below
-                self.game.push(Move(kind=MoveKind.hard_drop, auto=True))
+                self.game.push(Move(kind=MoveKind.HARD_DROP, auto=True))
             else:
                 self.game.push(
                     Move(
-                        kind=MoveKind.soft_drop,
+                        kind=MoveKind.SOFT_DROP,
                         x=int(since_drop / drop_delay),
                         auto=True,
                     )

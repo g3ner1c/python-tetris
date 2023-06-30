@@ -2,25 +2,25 @@
 
 import dataclasses
 import math
-import secrets
 from collections.abc import Iterable
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
-import numpy as np
-
-from tetris.engine import Engine
-from tetris.impl.presets import ModernEngine
-from tetris.types import Board
-from tetris.types import MinoType
-from tetris.types import Move
-from tetris.types import MoveDelta
-from tetris.types import MoveKind
-from tetris.types import PartialMove
-from tetris.types import PieceType
-from tetris.types import PlayingStatus
-from tetris.types import Rule
-from tetris.types import Ruleset
-from tetris.types import Seed
+from tetris.board import Board
+from tetris.engine import Engine, EngineFactory, Parts
+from tetris.impl.presets import Modern
+from tetris.types import (
+    BoardLike,
+    MinoType,
+    Move,
+    MoveDelta,
+    MoveKind,
+    PartialMove,
+    PieceType,
+    PlayingStatus,
+    Rule,
+    Ruleset,
+    Seed,
+)
 
 
 class BaseGame:
@@ -31,18 +31,24 @@ class BaseGame:
 
     Parameters
     ----------
-    engine : tetris.engine.Engine class, default = tetris.impl.presets.ModernEngine
-        An engine class, which contains a game's core logic. The default is to
-        mimic a modern Tetris game.
-    board : tetris.types.Board, optional
-        A 2D `numpy.ndarray` with scalar `numpy.int8`, given as the
-        initial board data. Optional, defaults to making a new board.
+    factory : tetris.engine.EngineFactory class, optional
+        An engine factory object, which builds a mutable engine object for the
+        game's core logic. Defaults to using a modern preset.
+    rule_overrides : dict[str, Any], optional
+        Mapping of rule names to overridden values.
+
+        .. seealso:: `Ruleset`, `Rule`
+    board : board_like
+        A `tetris.Board` or any compatible type (like a nested sequence, or
+        an `object compatible with numpy`__)
+
+        __ https://numpy.org/doc/1.23/user/basics.interoperability.html
 
         .. hint::
             The *visible* board is half as short as the given (*internal*)
             board. This is so as to "buffer" the board from large attacks.
     level : int, optional
-        The inital level to pass to `tetris.engine.Scorer`. Optional, defaults
+        The initial level to pass to `tetris.engine.Scorer`. Optional, defaults
         to using the `"initial_level"` rule.
 
         .. hint::
@@ -51,15 +57,9 @@ class BaseGame:
             might apply different scoring when the user starts on a different
             level. If that's not your case, use that rule instead of this.
     score : int, default = 0
-        The inital score to pass to `tetris.engine.Scorer`.
+        The initial score to pass to `tetris.engine.Scorer`.
     queue : Iterable[int], optional
         The initial pieces to pass to `tetris.engine.Queue`.
-    rule_overrides : dict[str, Any], optional
-        Mapping of rule names to overriden values.
-
-        .. seealso:: `Ruleset`, `Rule`
-    **options : dict, optional
-        Extra arguments to pass to `engine`.
 
     Other Parameters
     ----------------
@@ -72,8 +72,8 @@ class BaseGame:
     ----------
     engine : tetris.Engine
         The `tetris.Engine` instance currently being used by this game.
-    board : numpy.ndarray
-        The `numpy.ndarray` storing the board state. All values correspond to
+    board : tetris.Board
+        The `tetris.Board` storing the board state. All values correspond to
         `tetris.MinoType`. This board is twice as tall as the visible board.
         (see `height` and `width` for the proper board shape)
 
@@ -97,7 +97,7 @@ class BaseGame:
         True if the hold piece can't be swapped (i.e. it was already swapped).
     status : tetris.PlayingStatus
         Enum referencing the current game status. Pushing moves will only work
-        when this is `tetris.PlayingStatus.playing`.
+        when this is `tetris.PlayingStatus.PLAYING`.
 
         .. seealso:: `playing`, `paused`, `lost` properties.
     score : int
@@ -114,64 +114,73 @@ class BaseGame:
 
     def __init__(
         self,
-        engine: type[Engine] = ModernEngine,
+        factory: Union[EngineFactory, Parts] = Modern,
+        rule_overrides: dict[str, Any] = {},
         /,
-        board: Optional[Board] = None,
+        board: Optional[BoardLike] = None,
         queue: Optional[Iterable[int]] = None,
         level: Optional[int] = None,
         score: int = 0,
         seed: Optional[Seed] = None,
         board_size: Optional[tuple[int, int]] = None,
-        rule_overrides: dict[str, Any] = {},
-        **options: Any,
     ):
-        self.engine = engine(**options)
+        if isinstance(factory, EngineFactory):
+            self.engine = factory.build()
+        else:
+            self.engine = Engine(*factory)
 
         self.rules = Ruleset(
             Rule("board_size", tuple, (20, 10)),
             Rule("initial_level", int, 1),
             Rule("queue_size", int, 4),
             Rule("seed", (int, bytes, str, type(None)), None),
+            Rule("can_180_spin", bool, True),
+            Rule("can_hard_drop", bool, True),
         )
 
-        if seed:
+        if seed is not None:
             self.rules.seed = seed
-        if board_size:
+        if board_size is not None:
             self.rules.board_size = board_size
 
         if board is None:
             # Internally, we use 2x the height to "buffer" the board being
             # pushed above the view (e.g.: with garbage)
-            self.board = np.zeros(
-                (self.rules.board_size[0] * 2, self.rules.board_size[1]), dtype=np.int8
+            self.board = Board.zeros(
+                (self.rules.board_size[0] * 2, self.rules.board_size[1]),
             )
-        else:
+        elif isinstance(board, Board):
             self.board = board
+        else:
+            self.board = Board(board)
 
-        self.seed = self.rules.seed or secrets.token_bytes()
+        if self.board.ndim != 2:
+            raise ValueError("board must be 2-dimensional")
 
-        for part in self.engine._get_types():
-            # these are all classvars so no need to init
+        for part in self.engine.parts():
+            # Apply overrides from classvars instead of instance attributes, as
+            # to avoid rules used within initialization from being ignored.
             if override := getattr(part, "rule_overrides", None):
                 self.rules.override(override)
-
-            if rules := getattr(part, "rules", None):
-                self.rules.register(rules)
 
         if level is None:
             level = self.rules.initial_level
 
-        self.rules.override(rule_overrides)  # BaseGame overrides get priority
+        self.gravity = self.engine.gravity.from_game(self)
+        self.queue = self.engine.queue.from_game(self, queue)
+        self.rs = self.engine.rotation_system.from_game(self)
+        self.scorer = self.engine.scorer.from_game(self, score, level)
 
-        self.gravity = self.engine.gravity(self)
-        self.queue = self.engine.queue(self, queue or [])
-        self.rs = self.engine.rotation_system(self)
-        self.scorer = self.engine.scorer(self, score=score, level=level)
+        for i in (self.gravity, self.queue, self.rs, self.scorer):
+            if rules := getattr(i, "rules", None):
+                self.rules.register(rules)
+
+        self.rules.override(rule_overrides)  # BaseGame overrides get priority
 
         self.queue._size = self.rules.queue_size
 
         self.piece = self.rs.spawn(self.queue.pop())
-        self.status = PlayingStatus.playing
+        self.status = PlayingStatus.PLAYING
         self.delta: Optional[MoveDelta] = None
         self.hold: Optional[PieceType] = None
         self.hold_lock = False
@@ -195,6 +204,11 @@ class BaseGame:
         self.scorer.level = value
 
     @property
+    def seed(self) -> Seed:
+        """The random seed being used, shorthand for `queue.seed`."""
+        return self.queue.seed
+
+    @property
     def height(self) -> int:
         """The visible board's height. This is half of the internal size."""
         return self.board.shape[0] // 2
@@ -207,17 +221,17 @@ class BaseGame:
     @property
     def playing(self) -> bool:
         """True if currently playing."""
-        return self.status == PlayingStatus.playing
+        return self.status == PlayingStatus.PLAYING
 
     @property
     def paused(self) -> bool:
         """True if currently idle (i.e. paused)."""
-        return self.status == PlayingStatus.idle
+        return self.status == PlayingStatus.IDLE
 
     @property
     def lost(self) -> bool:
         """True if the game stopped."""
-        return self.status == PlayingStatus.stopped
+        return self.status == PlayingStatus.STOPPED
 
     @property
     def playfield(self) -> Board:
@@ -261,19 +275,17 @@ class BaseGame:
             board[x + ghost_x, y + piece.y] = 8
             board[x + piece.x, y + piece.y] = piece.type
 
-        board.flags.writeable = False
         return board[-self.height - buffer_lines :]
 
     def reset(self) -> None:
         """Restart the game, only keeping the `engine` instance."""
-        self.seed = self.rules.seed or secrets.token_bytes()
         self.board[:] = 0
-        self.gravity = self.engine.gravity(self)
-        self.queue = self.engine.queue(self, [])
-        self.rs = self.engine.rotation_system(self)
-        self.scorer = self.engine.scorer(self, score=0, level=self.rules.initial_level)
+        self.gravity = self.engine.gravity.from_game(self)
+        self.queue = self.engine.queue.from_game(self)
+        self.rs = self.engine.rotation_system.from_game(self)
+        self.scorer = self.engine.scorer.from_game(self)
         self.piece = self.rs.spawn(self.queue.pop())
-        self.status = PlayingStatus.playing
+        self.status = PlayingStatus.PLAYING
         self.delta = None
         self.hold = None
         self.hold_lock = False
@@ -286,14 +298,15 @@ class BaseGame:
         state : bool, optional
             If provided, set the pause state to this, otherwise toggle it.
         """
-        if self.status == PlayingStatus.playing and (state is None or state is True):
-            self.status = PlayingStatus.idle
-
-        elif self.status == PlayingStatus.idle and (state is None or state is False):
-            self.status = PlayingStatus.playing
+        if self.lost:
+            return
+        if state or (state is None and self.playing):
+            self.status = PlayingStatus.IDLE
+        elif state is False or (state is None and self.paused):
+            self.status = PlayingStatus.PLAYING
 
     def _lose(self) -> None:
-        self.status = PlayingStatus.stopped
+        self.status = PlayingStatus.STOPPED
 
     def _lock_piece(self) -> None:
         assert self.delta
@@ -335,12 +348,11 @@ class BaseGame:
             return
 
         if self.hold is None:
-            self.hold, self.piece = self.piece.type, self.rs.spawn(self.queue.pop())
+            self.hold = self.queue.pop()
 
-        else:
-            self.hold, self.piece = self.piece.type, self.rs.spawn(self.hold)
-
+        self.hold, self.piece = self.piece.type, self.rs.spawn(self.hold)
         self.hold_lock = True
+        assert not self.rs.overlaps(self.piece), "piece<-rs.spawn overlaps!"
 
     def _move_relative(self, x: int = 0, y: int = 0) -> None:
         self._move(self.piece.x + x, self.piece.y + y)
@@ -369,10 +381,13 @@ class BaseGame:
 
     def _rotate(self, turns: int) -> None:
         assert self.delta
+        if turns == 2 and not self.rules.can_180_spin:
+            return
         x = self.piece.x
         y = self.piece.y
         r = self.piece.r
         self.rs.rotate(self.piece, turns)
+        assert not self.rs.overlaps(self.piece), "rs.rotate overlaps!"
         self.delta.x = x - self.piece.x
         self.delta.y = y - self.piece.y
         self.delta.r = r - self.piece.r
@@ -384,27 +399,28 @@ class BaseGame:
         ----------
         move : tetris.PartialMove
         """
-        if self.status != PlayingStatus.playing:
+        if self.status != PlayingStatus.PLAYING:
             return
 
         self.delta = MoveDelta(
             kind=move.kind, game=self, x=move.x, y=move.y, r=move.r, auto=move.auto
         )
 
-        if move.kind == MoveKind.drag:
+        if move.kind == MoveKind.DRAG:
             self._move_relative(y=move.y)
 
-        elif move.kind == MoveKind.rotate:
+        elif move.kind == MoveKind.ROTATE:
             self._rotate(turns=move.r)
 
-        elif move.kind == MoveKind.soft_drop:
+        elif move.kind == MoveKind.SOFT_DROP:
             self._move_relative(x=move.x)
 
-        elif move.kind == MoveKind.swap:
+        elif move.kind == MoveKind.SWAP:
             self._swap()
 
-        elif move.kind == MoveKind.hard_drop:
-            self._lock_piece()
+        elif move.kind == MoveKind.HARD_DROP:
+            if move.auto or self.rules.can_hard_drop:
+                self._lock_piece()
 
         self.queue._size = self.rules.queue_size
         self.queue._safe_fill()
@@ -486,4 +502,11 @@ class BaseGame:
         return text.rstrip("\n")
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(engine={self.engine})"
+        return "<%s(EngineFactory(%s), %s, queue=%s, level=%i, score=%i)>" % (
+            self.__class__.__name__,
+            ", ".join(i.__name__ for i in self.engine.parts()),
+            self.rules,
+            self.queue,
+            self.level,
+            self.score,
+        )

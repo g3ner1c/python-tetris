@@ -3,28 +3,24 @@
 from __future__ import annotations
 
 import abc
+import dataclasses
 import random
 import secrets
-from collections.abc import Iterable
-from collections.abc import Iterator
-from collections.abc import Sequence
-from typing import Any, Optional, overload, TYPE_CHECKING
+from collections.abc import Iterable, Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union, final, overload
 
-from tetris.types import Board
-from tetris.types import Minos
-from tetris.types import MoveDelta
-from tetris.types import Piece
-from tetris.types import PieceType
-from tetris.types import Ruleset
-from tetris.types import Seed
+from tetris.board import Board
+from tetris.types import Minos, MoveDelta, Piece, PieceType, Ruleset, Seed
 
 if TYPE_CHECKING:
     from tetris import BaseGame
 
 Self = Any  # Only in 3.11
+Parts = tuple[type["Gravity"], type["Queue"], type["RotationSystem"], type["Scorer"]]
 
 __all__ = (
     "Engine",
+    "EngineFactory",
     "Gravity",
     "Queue",
     "RotationSystem",
@@ -32,80 +28,64 @@ __all__ = (
 )
 
 
-class Engine(abc.ABC):
-    """Factory object for parts of game logic.
+@final
+@dataclasses.dataclass(frozen=True)
+class EngineFactory:
+    """Factory object for mutable engine types.
 
-    Notes
-    -----
-    All methods receive a `BaseGame` as their arguments, this leaves it up to
-    the subclass to initialise those. This is useful, for instance, when
-    subclassing one of the engine parts and requiring another part of the game
-    to be provided (e.g. providing `game.seed`).
+    `EngineFactory` objects are immutable, while `Engine` objects are not. The
+    latter is found in `BaseGame.engine`. This is useful to maintain a preset
+    (like in `tetris.impl.presets`) shared to multiple games, while still
+    letting parts be switched in running games (though, nothing will happen
+    until a `BaseGame.reset` call).
+
+    Attributes
+    ----------
+    gravity : Gravity class
+    queue : Queue class
+    rotation_system : RotationSystem class
+    scorer : Scorer class
     """
 
-    @abc.abstractmethod
-    def _get_types(
-        self,
-    ) -> tuple[type[Gravity], type[Queue], type[RotationSystem], type[Scorer]]:
-        """Return the types of the engine parts.
+    __slots__ = ("gravity", "queue", "rotation_system", "scorer")
 
-        Returns
-        -------
-        tuple[type[Gravity], type[Queue], type[RotationSystem], type[Scorer]]
-        """
-        ...
+    gravity: type[Gravity]
+    queue: type[Queue]
+    rotation_system: type[RotationSystem]
+    scorer: type[Scorer]
 
-    @abc.abstractmethod
-    def gravity(self, game: BaseGame) -> Gravity:
-        """Return a new `Gravity` object.
+    def build(self) -> Engine:
+        """Build an `Engine` object."""
+        return Engine(*self.parts())
 
-        Returns
-        -------
-        Gravity
-        """
-        ...
+    def parts(self) -> Parts:
+        """Return a tuple of the parts used in this object."""
+        return self.gravity, self.queue, self.rotation_system, self.scorer
 
-    @abc.abstractmethod
-    def queue(self, game: BaseGame, pieces: Iterable[int]) -> Queue:
-        """Return a new `Queue` object.
 
-        Parameters
-        ----------
-        pieces : Iterable[int]
-            Passed to `Queue`.
+@final
+@dataclasses.dataclass
+class Engine:
+    """Dataclass holding core game logic.
 
-        Returns
-        -------
-        Queue
-        """
-        ...
+    Attributes
+    ----------
+    gravity : Gravity class
+    queue : Queue class
+    rotation_system : RotationSystem class
+    scorer : Scorer class
+    """
 
-    @abc.abstractmethod
-    def rotation_system(self, game: BaseGame) -> RotationSystem:
-        """Return a new `RotationSystem` object.
+    __slots__ = ("gravity", "queue", "rotation_system", "scorer")
 
-        Returns
-        -------
-        RotationSystem
-        """
-        ...
+    gravity: type[Gravity]
+    queue: type[Queue]
+    rotation_system: type[RotationSystem]
+    scorer: type[Scorer]
 
-    @abc.abstractmethod
-    def scorer(self, game: BaseGame, score: int, level: int) -> Scorer:
-        """Return a new `Scorer` object.
-
-        Parameters
-        ----------
-        score : int
-            Passed to `Scorer`.
-        level : int
-            Passed to `Scorer`.
-
-        Returns
-        -------
-        Scorer
-        """
-        ...
+    def parts(self) -> Parts:
+        """Return a tuple of the parts used in this object."""
+        return self.gravity, self.queue, self.rotation_system, self.scorer
 
 
 class EnginePart(abc.ABC):
@@ -116,7 +96,7 @@ class EnginePart(abc.ABC):
     rules : Ruleset
         Defines rules for this specific object. *Must* have a name set.
     rule_overrides : dict[str, Any]
-        Mapping of rule names to overriden values.
+        Mapping of rule names to overridden values.
 
     Notes
     -----
@@ -166,7 +146,7 @@ class Gravity(EnginePart):
         ...
 
 
-class Queue(EnginePart, Sequence):
+class Queue(EnginePart, Sequence[PieceType]):
     """Abstract base class for queue implementations.
 
     This class extends `collections.abc.Sequence` and consists of `PieceType`
@@ -217,7 +197,7 @@ class Queue(EnginePart, Sequence):
         self._size = 7  # May be changed by a game class
         self._safe_fill()
 
-    def _safe_fill(self):
+    def _safe_fill(self) -> None:
         prev_size = len(self._pieces)
         while len(self._pieces) <= self._size:
             self.fill()
@@ -230,7 +210,7 @@ class Queue(EnginePart, Sequence):
     @classmethod
     def from_game(cls, game: BaseGame, pieces: Optional[Iterable[int]] = None) -> Queue:
         """Construct this object from a game object."""
-        return cls(pieces=pieces, seed=game.seed)
+        return cls(pieces=pieces, seed=game.rules.seed)
 
     def pop(self) -> PieceType:
         """Remove and return the first piece of the queue."""
@@ -266,7 +246,7 @@ class Queue(EnginePart, Sequence):
     def __getitem__(self, i: slice) -> list[PieceType]:
         ...
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: Union[int, slice]) -> Union[list[PieceType], PieceType]:
         return self._pieces[: self._size][i]
 
     def __len__(self) -> int:
@@ -284,7 +264,7 @@ class RotationSystem(EnginePart):
 
     Parameters
     ----------
-    board : tetris.types.Board
+    board : tetris.board.Board
         The board this should operate on.
     """
 
@@ -333,7 +313,9 @@ class RotationSystem(EnginePart):
     def overlaps(self, minos: Minos, px: int, py: int) -> bool:
         ...
 
-    def overlaps(self, piece=None, minos=None, px=None, py=None):
+    def overlaps(  # type: ignore
+        self, piece: Any = None, minos: Any = None, px: Any = None, py: Any = None
+    ) -> bool:
         """Check if a piece's minos would overlap with anything.
 
         This method expects either `piece`, or `minos`, `px` and `py` to be
@@ -400,6 +382,8 @@ class Scorer(EnginePart):
         cls, game: BaseGame, score: Optional[int] = None, level: Optional[int] = None
     ) -> Scorer:
         """Construct this object from a game object."""
+        if level is None:
+            level = game.rules.initial_level
         return cls(score=score, level=level)
 
     @abc.abstractmethod

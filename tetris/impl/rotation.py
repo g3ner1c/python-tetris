@@ -4,13 +4,9 @@ from __future__ import annotations
 
 from typing import ClassVar, Optional
 
+from tetris.board import Board
 from tetris.engine import RotationSystem
-from tetris.types import Board
-from tetris.types import Minos
-from tetris.types import Piece
-from tetris.types import PieceType
-from tetris.types import Rule
-from tetris.types import Ruleset
+from tetris.types import Minos, Piece, PieceType, Rule, Ruleset
 
 KickTable = dict[tuple[int, int], tuple[tuple[int, int], ...]]  # pardon
 
@@ -280,7 +276,7 @@ class SRS(RotationSystem):
         if not (piece.r, to_r) in table:
             return
 
-        minos = self.shapes[piece.type][piece.r]
+        minos = self.shapes[piece.type][to_r]
         for x, y in table[piece.r, to_r]:
             # for each offset, test if it's valid
             if not self.overlaps(minos=minos, px=piece.x + x, py=piece.y + y):
@@ -300,6 +296,8 @@ class TetrioSRS(SRS):
     not used in guideline SRS. This rotation system also has a ``Rule`` for
     symmetrical I-piece kicks which is on by default, called *SRS+* in-game.
     """
+
+    rule_overrides = {"can_180_spin": True}
 
     tetrio_180_kicks: ClassVar[KickTable] = {
         (0, 2): ((-1, +0), (-1, +1), (-1, -1), (+0, +1), (+0, -1)),  # 0 -> 2
@@ -322,6 +320,8 @@ class TetrioSRS(SRS):
 
     kicks = SRS.kicks | tetrio_180_kicks
     i_kicks = SRS.i_kicks | tetrio_180_kicks
+
+    rules: Ruleset
 
     def __init__(self, board: Board):
         super().__init__(board)
@@ -467,7 +467,7 @@ class NRS(RotationSystem):
         ],
     }
 
-    gb_shapes = shapes | {
+    gb_shapes: dict[PieceType, list[Minos]] = shapes | {
         PieceType.I: [
             ((2, 0), (2, 1), (2, 2), (2, 3)),
             #    . . . .
@@ -510,6 +510,8 @@ class NRS(RotationSystem):
             ((0, 1), (1, 0), (1, 1), (2, 0)),
         ],
     }
+
+    rules: Ruleset
 
     def __init__(self, board: Board):
         super().__init__(board)

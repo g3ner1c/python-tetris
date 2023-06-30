@@ -7,7 +7,6 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
-   tetris.impl.custom
    tetris.impl.gravity
    tetris.impl.presets
    tetris.impl.queue

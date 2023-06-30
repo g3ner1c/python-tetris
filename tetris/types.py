@@ -6,25 +6,49 @@ import dataclasses
 import enum
 import keyword
 import sys
-from collections.abc import Iterable
-from typing import Any, final, Optional, TYPE_CHECKING, Union
-
-import numpy as np
-from numpy.typing import NDArray
+from collections.abc import Iterable, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Optional,
+    Protocol,
+    SupportsIndex,
+    Union,
+    final,
+    runtime_checkable,
+)
 
 if TYPE_CHECKING:
     from tetris import BaseGame
+    from tetris.board import Board
+
+    try:
+        import numpy as np
+    except ImportError:
+        pass
 
 if sys.version_info > (3, 10):
     from typing import TypeAlias
 
-    Board: TypeAlias
     Minos: TypeAlias
     Seed: TypeAlias
+    BoardLike: TypeAlias
 
-Board = NDArray[np.int8]
+
+@runtime_checkable
+class _SupportsArray(Protocol):
+    def __array__(self, dtype: type[np.generic]) -> np.ndarray[Any, np.dtype[np.int8]]:
+        ...
+
+
 Minos = Iterable[tuple[int, int]]
 Seed = Union[str, bytes, int]
+BoardLike = Union[
+    "Board",
+    _SupportsArray,
+    Sequence[SupportsIndex],
+    Sequence[Sequence[SupportsIndex]],
+]
 
 
 @final
@@ -60,7 +84,7 @@ class Rule:
     type: Union[type, tuple[type, ...]]
     default: Any
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.value: Any = self.default
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -167,25 +191,30 @@ class Ruleset:
         yield from object.__dir__(self)
         yield from self._rules.keys()
 
+    def __repr__(self) -> str:
+        return "<Ruleset (%s)>" % (
+            ", ".join(f"{n}={r.value}" for n, r in self._rules.items())
+        )
+
 
 class PlayingStatus(enum.Enum):
     """Enum representing a game's status.
 
     Attributes
     ----------
-    playing
+    PLAYING
         The game can proceed normally.
-    idle
+    IDLE
         The game is temporarily stopped (i.e. it was paused).
-    stopped
+    STOPPED
         The game is permanently stopped (e.g. after a block-out).
     """
 
-    playing = enum.auto()
-    idle = enum.auto()
-    stopped = enum.auto()
+    PLAYING = enum.auto()
+    IDLE = enum.auto()
+    STOPPED = enum.auto()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"
 
 
@@ -194,23 +223,23 @@ class MoveKind(enum.Enum):
 
     Attributes
     ----------
-    drag
+    DRAG
         Horizontal push.
-    hard_drop
+    HARD_DROP
         Hard-drop: the piece is pushed to the bottom and locked.
-    rotate
+    ROTATE
         Rotation.
-    soft_drop
+    SOFT_DROP
         Downward push.
-    swap
+    SWAP
         Swap: the piece is swapped with the hold piece.
     """
 
-    drag = enum.auto()
-    hard_drop = enum.auto()
-    rotate = enum.auto()
-    soft_drop = enum.auto()
-    swap = enum.auto()
+    DRAG = enum.auto()
+    HARD_DROP = enum.auto()
+    ROTATE = enum.auto()
+    SOFT_DROP = enum.auto()
+    SWAP = enum.auto()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"
@@ -221,13 +250,8 @@ class PieceType(enum.IntEnum):
 
     Attributes
     ----------
-    I
-    J
-    L
-    O
-    S
-    T
-    Z
+    I, J, L, O, S, T, Z
+        Standard game pieces. Defined as 1 to 7.
 
     See Also
     --------
@@ -251,16 +275,14 @@ class MinoType(enum.IntEnum):
 
     Attributes
     ----------
+    I, J, L, O, S, T, Z
+        Standard game pieces. Defined with same values as `PieceType`.
     EMPTY
-    I
-    J
-    L
-    O
-    S
-    T
-    Z
+        Empty mino. Defined as 0.
     GHOST
+        Ghost mino. Used in `BaseGame.get_playfield`
     GARBAGE
+        Garbage mino. Currently unused by the library.
     """
 
     EMPTY = 0
@@ -438,8 +460,6 @@ class MoveDelta(PartialMove):
         self.clears = clears or []
         self.auto = auto
 
-    __eq__ = object.__eq__
-
 
 @final
 class Move(PartialMove):
@@ -474,7 +494,7 @@ class Move(PartialMove):
         -------
         Move
         """
-        return cls(MoveKind.drag, y=tiles)
+        return cls(MoveKind.DRAG, y=tiles)
 
     @classmethod
     def left(cls, tiles: int = 1) -> Move:
@@ -489,7 +509,7 @@ class Move(PartialMove):
         -------
         Move
         """
-        return cls(MoveKind.drag, y=-tiles)
+        return cls(MoveKind.DRAG, y=-tiles)
 
     @classmethod
     def right(cls, tiles: int = 1) -> Move:
@@ -504,7 +524,7 @@ class Move(PartialMove):
         -------
         Move
         """
-        return cls(MoveKind.drag, y=+tiles)
+        return cls(MoveKind.DRAG, y=+tiles)
 
     @classmethod
     def rotate(cls, turns: int = 1) -> Move:
@@ -519,7 +539,7 @@ class Move(PartialMove):
         -------
         Move
         """
-        return cls(MoveKind.rotate, r=turns)
+        return cls(MoveKind.ROTATE, r=turns)
 
     @classmethod
     def hard_drop(cls) -> Move:
@@ -529,7 +549,7 @@ class Move(PartialMove):
         -------
         Move
         """
-        return cls(MoveKind.hard_drop)
+        return cls(MoveKind.HARD_DROP)
 
     @classmethod
     def soft_drop(cls, tiles: int = 1) -> Move:
@@ -544,7 +564,7 @@ class Move(PartialMove):
         -------
         Move
         """
-        return cls(MoveKind.soft_drop, x=tiles)
+        return cls(MoveKind.SOFT_DROP, x=tiles)
 
     @classmethod
     def swap(cls) -> Move:
@@ -554,4 +574,4 @@ class Move(PartialMove):
         -------
         Move
         """
-        return cls(MoveKind.swap)
+        return cls(MoveKind.SWAP)
