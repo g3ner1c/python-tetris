@@ -3,7 +3,7 @@
 [![pypi](https://img.shields.io/pypi/v/tetris?logo=pypi&logoColor=f0f0f0&style=for-the-badge)](https://pypi.org/project/tetris/)
 [![python-versions](https://img.shields.io/pypi/pyversions/tetris?logo=python&logoColor=f0f0f0&style=for-the-badge)](https://pypi.org/project/tetris/)
 [![downloads](https://img.shields.io/pypi/dm/tetris?style=for-the-badge)](https://pypi.org/project/tetris/)
-[![build](https://img.shields.io/github/workflow/status/dzshn/python-tetris/Test%20library?logo=github&logoColor=f0f0f0&style=for-the-badge)](https://github.com/dzshn/python-tetris/actions/workflows/test.yml)
+[![build](https://img.shields.io/github/workflow/status/g3ner1c/python-tetris/Test%20library?logo=github&logoColor=f0f0f0&style=for-the-badge)](https://github.com/g3ner1c/python-tetris/actions/workflows/test.yml)
 [![docs](https://img.shields.io/readthedocs/python-tetris?style=for-the-badge)](https://python-tetris.readthedocs.io/en/latest/?badge=latest)
 [![technical-debt](https://img.shields.io/badge/contains-technical%20debt-009fef?style=for-the-badge)](https://forthebadge.com/)
 
@@ -33,7 +33,7 @@ Z Z
 
 -   [Documentation](https://python-tetris.readthedocs.io/)
 -   [PyPI](https://pypi.org/project/tetris)
--   Support: [create an issue](https://github.com/dzshn/python-tetris/issues/new/choose) or [see author contact](https://dzshn.xyz)
+-   Support: [create an issue](https://github.com/g3ner1c/python-tetris/issues/new/choose) or [see author contact](https://dzshn.xyz)
 
 ## Install
 
@@ -47,5 +47,5 @@ pip install tetris
 To install the git version:
 
 ```sh
-pip install git+https://github.com/dzshn/python-tetris
+pip install git+https://github.com/g3ner1c/python-tetris
 ```
